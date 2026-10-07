@@ -59,7 +59,7 @@ struct ProfilesSettingsView: View {
             counter += 1
             name = "\(baseName) \(counter)"
         }
-        let created = profileService.createProfile(name: name)
+        let created = profileService.createProfile(name: name, basedOn: profileService.activeProfile)
         profileService.setActiveProfile(id: created.id)
     }
 }
