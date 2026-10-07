@@ -1155,7 +1155,8 @@ struct TileContainerView: View {
                 + "labels=\(preferences.showsDockTileLabels ? "dock" : "-")"
                 + "\(preferences.showsAppFolderLabels ? "+folder" : "") "
                 + "placement=\(preferences.tileLabelPlacement.rawValue) "
-                + "font=\(preferences.tileLabelFontSize)"
+                + "font=\(preferences.tileLabelFontSize) "
+                + "git=\(DockyVersion.gitSHA ?? "-")"
         )
         var signature = lines[0] + "|\(tiles.count)"
         var snapshotTiles: [[String: Any]] = []

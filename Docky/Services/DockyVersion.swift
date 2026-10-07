@@ -16,8 +16,20 @@ enum DockyVersion {
         Bundle.main.object(forInfoDictionaryKey: kCFBundleVersionKey as String) as? String ?? "?"
     }
 
-    /// e.g. "Docky 0.8.0 (202607010)".
+    /// Short git SHA baked in at build time (`docky.py build` stamps
+    /// `DockyGitSHA` into the bundle; official builds omit it). Includes
+    /// a `-dirty` suffix when the worktree had uncommitted changes.
+    static var gitSHA: String? {
+        guard let sha = Bundle.main.object(forInfoDictionaryKey: "DockyGitSHA") as? String,
+              !sha.isEmpty
+        else { return nil }
+        return sha
+    }
+
+    /// e.g. "Docky 0.8.0 (202607010) · a399c20".
     static var menuHeader: String {
-        "Docky \(short) (\(build))"
+        let base = "Docky \(short) (\(build))"
+        guard let sha = gitSHA else { return base }
+        return "\(base) · \(sha)"
     }
 }

@@ -95,6 +95,27 @@ def ensure_entitlements() -> Path:
     return ENTITLEMENTS_CACHE
 
 
+def stamp_git_sha(app_path: Path) -> None:
+    """Write the worktree's short SHA into the bundle for `DockyVersion`.
+
+    Must run before signing: Info.plist is part of the code seal.
+    Appends `-dirty` when anything is uncommitted.
+    """
+    sha = subprocess.run(["git", "-C", str(REPO), "rev-parse", "--short", "HEAD"],
+                         text=True, capture_output=True, check=True).stdout.strip()
+    dirty = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain"],
+                           text=True, capture_output=True, check=False).stdout.strip()
+    stamp = sha + ("-dirty" if dirty else "")
+    plist = app_path / "Contents" / "Info.plist"
+    existing = subprocess.run(["/usr/libexec/PlistBuddy", "-c", "Print :DockyGitSHA", str(plist)],
+                              text=True, capture_output=True, check=False)
+    if existing.returncode == 0:
+        run(["/usr/libexec/PlistBuddy", "-c", f"Set :DockyGitSHA {stamp}", str(plist)])
+    else:
+        run(["/usr/libexec/PlistBuddy", "-c", f"Add :DockyGitSHA string {stamp}", str(plist)])
+    logger.info("Stamped git SHA {}", stamp)
+
+
 def sign_app(app_path: Path, identity: str) -> None:
     identities = subprocess.run(
         ["security", "find-identity", "-v", "-p", "codesigning"],
@@ -129,6 +150,7 @@ def build(
     app_path = built_app(config)
     if not app_path.exists():
         raise typer.Exit(f"Build produced no bundle at {app_path}")
+    stamp_git_sha(app_path)
     sign_app(app_path, identity)
     logger.info("Build ready at {}", app_path)
 
