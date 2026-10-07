@@ -1187,14 +1187,25 @@ struct TileContainerView: View {
             let center = restAxisCenter(forTileID: tile.id) ?? 0
             signature += "|\(tile.id)=\(Int(size.width))x\(Int(size.height))"
             lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) c=\(Int(center)) label=\(label)")
-            snapshotTiles.append([
+            var entry: [String: Any] = [
                 "id": tile.id,
                 "kind": kind,
                 "w": Int(size.width),
                 "h": Int(size.height),
                 "c": Int(center),
                 "label": TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "",
-            ])
+            ]
+            // Contained apps (folder mosaic) and owning app (minimized
+            // tile) so the inspector can resolve their real icons.
+            switch tile.content {
+            case .appFolder(let folder):
+                entry["apps"] = Array(folder.apps.prefix(4).map(\.bundleIdentifier))
+            case .minimizedWindow(let window):
+                entry["bundle"] = window.bundleIdentifier
+            default:
+                break
+            }
+            snapshotTiles.append(entry)
         }
         let snapshot: [String: Any] = [
             "position": "\(position)",
