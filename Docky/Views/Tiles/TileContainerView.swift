@@ -1158,6 +1158,7 @@ struct TileContainerView: View {
                 + "font=\(preferences.tileLabelFontSize)"
         )
         var signature = lines[0] + "|\(tiles.count)"
+        var snapshotTiles: [[String: Any]] = []
         for tile in tiles {
             let size = Self.size(
                 for: tile,
@@ -1184,10 +1185,32 @@ struct TileContainerView: View {
             let label = TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "-"
             signature += "|\(tile.id)=\(Int(size.width))x\(Int(size.height))"
             lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) label=\(label)")
+            snapshotTiles.append([
+                "id": tile.id,
+                "kind": kind,
+                "w": Int(size.width),
+                "h": Int(size.height),
+                "label": TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "",
+            ])
         }
-        DockyDebugService.shared.logLayoutIfChanged(signature: signature) {
+        let snapshot: [String: Any] = [
+            "position": "\(position)",
+            "tile": [Int(effectiveTileSize), Int(tileHeight)],
+            "spacing": Int(effectiveTileSpacing),
+            "scale": layout.contentScale,
+            "placement": preferences.tileLabelPlacement.rawValue,
+            "fontSize": Double(String(format: "%.1f", preferences.tileLabelFontSize)) ?? 0,
+            "tiles": snapshotTiles,
+        ]
+        let snapshotJSON: String = {
+            guard let data = try? JSONSerialization.data(withJSONObject: snapshot, options: [.sortedKeys]),
+                  let json = String(data: data, encoding: .utf8)
+            else { return "{}" }
+            return json
+        }()
+        DockyDebugService.shared.logLayoutIfChanged(signature: signature, report: {
             "dock layout (\(tiles.count) tiles):\n" + lines.joined(separator: "\n")
-        }
+        }, snapshotJSON: { snapshotJSON })
     }
 
     /// Frame to assign to the tile, computed from its magnified icon side.

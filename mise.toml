@@ -22,6 +22,10 @@ run = "uv run --script scripts/docky.py restart"
 description = "Show the last 50 lines of the debug log"
 run = "uv run --script scripts/docky.py logs --tail 50"
 
+[tasks."docky:layout"]
+description = "Print the latest machine-readable layout snapshot as JSON"
+run = "uv run --script scripts/docky.py layout"
+
 [tasks."docky:debug-on"]
 description = "Enable debug file logging (takes effect immediately)"
 run = "uv run --script scripts/docky.py debug --enable"

@@ -261,6 +261,15 @@ def debug(
 
 
 @app.command()
+def layout() -> None:
+    """Print the latest machine-readable layout snapshot as JSON."""
+    path = debug_log_file().parent / "docky-layout.json"
+    if not path.exists():
+        raise typer.Exit(f"No snapshot yet at {path}; enable debug logging first.")
+    print(path.read_text(), end="")
+
+
+@app.command()
 def overlay(
     enable: bool = typer.Option(True, "--enable/--disable", help="Paint the technical overlay over dock tiles."),
 ) -> None:

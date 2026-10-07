@@ -41,4 +41,6 @@ stays put between releases.
   Settings → Support → Debug or `docky.py debug`), per-tile geometry
   is logged on layout changes, and a technical overlay paints frame
   size, paddings, and label text over every tile (`docky.py overlay`
-  or the same Settings pane).
+  or the same Settings pane). The layout is also snapshotted as
+  machine-readable JSON (`docky-layout.json` next to the log,
+  `docky.py layout`) for scripted inspection.

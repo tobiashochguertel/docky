@@ -55,7 +55,7 @@ final class DockyDebugService {
 
     /// Logs a layout report only when its signature changed (and at most
     /// once per second, so magnification hovers don't flood the file).
-    func logLayoutIfChanged(signature: String, report: () -> String) {
+    func logLayoutIfChanged(signature: String, report: () -> String, snapshotJSON: () -> String) {
         guard DockyDebugLogging.isEnabled else { return }
         let now = Date()
         guard signature != lastLayoutSignature,
@@ -64,6 +64,21 @@ final class DockyDebugService {
         lastLayoutSignature = signature
         lastLayoutLogAt = now
         log(report(), category: "layout")
+        writeLayoutSnapshot(snapshotJSON())
+    }
+
+    /// Overwrites the machine-readable layout snapshot (one JSON object,
+    /// always the latest). Agents read this file instead of parsing the
+    /// interleaved human-readable log.
+    func writeLayoutSnapshot(_ json: String) {
+        let url = logFileURL.deletingLastPathComponent().appending(path: "docky-layout.json", directoryHint: .notDirectory)
+        queue.async {
+            try? FileManager.default.createDirectory(
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try? json.data(using: .utf8)?.write(to: url, options: .atomic)
+        }
     }
 
     func clearLog() {
