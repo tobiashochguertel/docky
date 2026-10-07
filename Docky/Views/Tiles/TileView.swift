@@ -763,10 +763,10 @@ struct TileView: View {
     }
 
     /// Persistent iOS-style name label for this tile, or `nil` when the
-    /// surface's toggle is off. Dock tiles (apps, Launchpad, Start Menu,
-    /// folders, Trash, minimized windows) follow `showsDockTileLabels`;
-    /// app-folder tiles follow `showsAppFolderLabels` so folders can be
-    /// labeled while the rest of the dock stays icon-only.
+    /// surface's toggle is off. Everything in the dock — apps, Launchpad,
+    /// Start Menu, folders, app folders, Trash, minimized windows —
+    /// follows `showsDockTileLabels`; only the apps *inside* an opened
+    /// folder follow `showsAppFolderLabels`.
     private var dockLabelText: String? {
         switch tile.content {
         case .app(let app):
@@ -776,7 +776,7 @@ struct TileView: View {
             else { return nil }
             return app.displayName
         case .appFolder(let folder):
-            guard preferences.showsAppFolderLabels,
+            guard preferences.showsDockTileLabels,
                   !folder.displayName.isEmpty
             else { return nil }
             return folder.displayName

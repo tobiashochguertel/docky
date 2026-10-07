@@ -469,7 +469,34 @@ struct AppearanceSettingsView: View {
                 }
                 .disabled(!preferences.showsDockTileLabels && !preferences.showsAppFolderLabels)
 
-                Text("Paints the app name next to its icon, like iOS. The dock toggle covers app tiles plus Launchpad, Start Menu, folders, Trash, and minimized windows; the folder toggle covers the folder's own dock tile and the apps inside opened folders. Both are off by default.")
+                HStack {
+                    Text("Label Text Size")
+                        .font(.headline)
+
+                    Spacer()
+
+                    HStack {
+                        Slider(value: $preferences.tileLabelFontSize, in: 8...20, step: 0.5) {
+                            Text("Label Text Size")
+                        }
+                        .labelsHidden()
+                        Text(String(format: "%.1f pt", preferences.tileLabelFontSize))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 56, alignment: .trailing)
+                    }
+                }
+                .disabled(!preferences.showsDockTileLabels && !preferences.showsAppFolderLabels)
+
+                Toggle("Use Custom Label Color", isOn: usesCustomTileLabelColorBinding)
+                    .font(.headline)
+                    .disabled(!preferences.showsDockTileLabels && !preferences.showsAppFolderLabels)
+
+                if preferences.tileLabelColor != nil {
+                    ColorPicker("Label Color", selection: tileLabelColorBinding, supportsOpacity: false)
+                        .disabled(!preferences.showsDockTileLabels && !preferences.showsAppFolderLabels)
+                }
+
+                Text("Paints the app name next to its icon, like iOS. The dock toggle covers everything in the dock — app tiles, app-folder tiles, Launchpad, Start Menu, folders, Trash, and minimized windows. The folder toggle covers only the app names inside opened folders. Both are off by default.")
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -1079,6 +1106,30 @@ struct AppearanceSettingsView: View {
                 }
 
                 preferences.activeIndicatorColor = indicatorColor
+            }
+        )
+    }
+
+    private var usesCustomTileLabelColorBinding: Binding<Bool> {
+        Binding(
+            get: { preferences.tileLabelColor != nil },
+            set: { usesCustomColor in
+                preferences.tileLabelColor = usesCustomColor
+                    ? (preferences.tileLabelColor ?? DockColor(nsColor: .labelColor))
+                    : nil
+            }
+        )
+    }
+
+    private var tileLabelColorBinding: Binding<Color> {
+        Binding(
+            get: {
+                let nsColor = preferences.tileLabelColor?.nsColor ?? .labelColor
+                return Color(nsColor: nsColor)
+            },
+            set: { newValue in
+                guard let labelColor = DockColor(nsColor: NSColor(newValue)) else { return }
+                preferences.tileLabelColor = labelColor
             }
         )
     }

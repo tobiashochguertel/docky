@@ -11,12 +11,13 @@ stays put between releases.
 
 - Optional iOS-style name labels for dock tiles and app folders. Two
   independent toggles (both default off) plus a shared label position
-  (Below / Above / Leading / Trailing) under Settings → Appearance →
-  Tile Layout. The dock toggle covers app tiles as well as Launchpad,
-  Start Menu, folder, Trash, and minimized-window tiles; the folder
-  toggle covers the folder's own dock tile and the app names inside
-  opened folder popovers. Both surfaces share the centralized
-  `TileLabelView` / `TileLabeledContent` implementation.
+  (Below / Above / Leading / Trailing), text size slider, and optional
+  custom text color under Settings → Appearance → Tile Layout. The dock
+  toggle covers everything in the dock — app tiles, app-folder tiles,
+  Launchpad, Start Menu, folders, Trash, and minimized windows; the
+  folder toggle covers only the app names inside opened folders. Both
+  surfaces share the centralized `TileLabelView` / `TileLabeledContent`
+  implementation.
 - New profiles start as a copy of the active profile (tiles, widgets,
   and hidden apps) instead of empty.
 

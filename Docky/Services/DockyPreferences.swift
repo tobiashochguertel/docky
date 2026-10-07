@@ -1756,6 +1756,24 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Point size of the tile name labels. Applies to both the dock and
+    /// app-folder surfaces.
+    var tileLabelFontSize: CGFloat {
+        didSet {
+            guard tileLabelFontSize != oldValue else { return }
+            defaults.set(Double(tileLabelFontSize), forKey: Keys.tileLabelFontSize)
+        }
+    }
+
+    /// Optional custom color for the tile name labels. `nil` follows the
+    /// system primary text color.
+    var tileLabelColor: DockColor? {
+        didSet {
+            guard tileLabelColor != oldValue else { return }
+            persistOptionalColor(tileLabelColor, forKey: Keys.tileLabelColor)
+        }
+    }
+
     /// Whether `docky://install-widget` links may install a widget. Off by
     /// default so a web page can't drive a native-code install unprompted.
     var allowsWidgetLinkInstalls: Bool {
@@ -3601,6 +3619,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let showsDockTileLabels = "docky.showsDockTileLabels"
         static let showsAppFolderLabels = "docky.showsAppFolderLabels"
         static let tileLabelPlacement = "docky.tileLabelPlacement"
+        static let tileLabelFontSize = "docky.tileLabelFontSize"
+        static let tileLabelColor = "docky.tileLabelColor"
         static let allowsWidgetLinkInstalls = "docky.allowsWidgetLinkInstalls"
         static let folderBadgeMode = "docky.folderBadgeMode"
         static let folderBadgePreviewStyle = "docky.folderBadgePreviewStyle"
@@ -3715,6 +3735,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let showsDockTileLabels = false
         static let showsAppFolderLabels = false
         static let tileLabelPlacement: TileLabelPlacement = .below
+        static let tileLabelFontSize: CGFloat = 11
+        static let tileLabelColor: DockColor? = nil
         static let allowsWidgetLinkInstalls = false
         static let folderBadgeMode: FolderBadgeMode = .combined
         static let folderBadgePreviewStyle: FolderBadgePreviewStyle = .dot
@@ -3852,6 +3874,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         let storedShowsDockTileLabels = defaults.object(forKey: Keys.showsDockTileLabels) as? Bool
         let storedShowsAppFolderLabels = defaults.object(forKey: Keys.showsAppFolderLabels) as? Bool
         let storedTileLabelPlacement = defaults.string(forKey: Keys.tileLabelPlacement)
+        let storedTileLabelFontSize = defaults.object(forKey: Keys.tileLabelFontSize) as? Double
+        let storedTileLabelColor = defaults.data(forKey: Keys.tileLabelColor)
         let storedAllowsWidgetLinkInstalls = defaults.object(forKey: Keys.allowsWidgetLinkInstalls) as? Bool
         let storedFolderBadgeMode = defaults.string(forKey: Keys.folderBadgeMode)
         let storedFolderBadgePreviewStyle = defaults.string(forKey: Keys.folderBadgePreviewStyle)
@@ -3983,6 +4007,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         self.showsDockTileLabels = storedShowsDockTileLabels ?? DefaultValues.showsDockTileLabels
         self.showsAppFolderLabels = storedShowsAppFolderLabels ?? DefaultValues.showsAppFolderLabels
         self.tileLabelPlacement = storedTileLabelPlacement.flatMap(TileLabelPlacement.init(rawValue:)) ?? DefaultValues.tileLabelPlacement
+        self.tileLabelFontSize = min(max(storedTileLabelFontSize.map { CGFloat($0) } ?? DefaultValues.tileLabelFontSize, 8), 20)
+        self.tileLabelColor = Self.decodeColor(from: storedTileLabelColor) ?? DefaultValues.tileLabelColor
         self.allowsWidgetLinkInstalls = storedAllowsWidgetLinkInstalls ?? DefaultValues.allowsWidgetLinkInstalls
         self.folderBadgeMode = storedFolderBadgeMode
             .flatMap(FolderBadgeMode.init(rawValue:))
@@ -4183,6 +4209,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         showsDockTileLabels = DefaultValues.showsDockTileLabels
         showsAppFolderLabels = DefaultValues.showsAppFolderLabels
         tileLabelPlacement = DefaultValues.tileLabelPlacement
+        tileLabelFontSize = DefaultValues.tileLabelFontSize
+        tileLabelColor = DefaultValues.tileLabelColor
 
         // Tile Hover Effect
         tileHoverOpacity = nil
@@ -4324,6 +4352,8 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         showsDockTileLabels = DefaultValues.showsDockTileLabels
         showsAppFolderLabels = DefaultValues.showsAppFolderLabels
         tileLabelPlacement = DefaultValues.tileLabelPlacement
+        tileLabelFontSize = DefaultValues.tileLabelFontSize
+        tileLabelColor = DefaultValues.tileLabelColor
         folderBadgeMode = DefaultValues.folderBadgeMode
         folderBadgePreviewStyle = DefaultValues.folderBadgePreviewStyle
         opensAtLogin = DefaultValues.opensAtLogin

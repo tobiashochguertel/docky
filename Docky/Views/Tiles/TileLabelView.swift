@@ -8,6 +8,7 @@
 //  so both surfaces stay in lockstep.
 //
 
+import AppKit
 import SwiftUI
 
 /// Where the name label sits relative to its icon. One shared setting
@@ -35,17 +36,25 @@ enum TileLabelPlacement: String, CaseIterable, Codable, Identifiable {
 /// can't stretch the dock.
 struct TileLabelView: View {
     let text: String
+    @Bindable private var preferences = DockyPreferences.shared
 
     var body: some View {
         Text(text)
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: preferences.tileLabelFontSize, weight: .medium))
             .lineLimit(1)
             .truncationMode(.tail)
             .multilineTextAlignment(.center)
-            .foregroundStyle(.primary)
+            .foregroundStyle(labelColor)
             .shadow(color: .black.opacity(0.35), radius: 1, x: 0, y: 1)
             .frame(maxWidth: .infinity)
             .accessibilityLabel(text)
+    }
+
+    private var labelColor: Color {
+        guard let dockColor = preferences.tileLabelColor else {
+            return .primary
+        }
+        return Color(nsColor: dockColor.nsColor)
     }
 }
 
