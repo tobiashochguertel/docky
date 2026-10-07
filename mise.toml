@@ -1,0 +1,19 @@
+[tasks."docky:build"]
+description = "Build Docky (Debug) and re-sign with the stable Developer ID"
+run = "uv run --script scripts/docky.py build"
+
+[tasks."docky:build-release"]
+description = "Build Docky (Release) and re-sign with the stable Developer ID"
+run = "uv run --script scripts/docky.py build --config Release"
+
+[tasks."docky:deploy"]
+description = "Install the local Debug build to /Applications and relaunch"
+run = "uv run --script scripts/docky.py deploy"
+
+[tasks."docky:redeploy"]
+description = "Build, sign, and deploy Docky in one step"
+run = "uv run --script scripts/docky.py redeploy"
+
+[tasks."docky:updates-on"]
+description = "Re-enable Sparkle automatic update checks"
+run = "uv run --script scripts/docky.py updates --enable"
