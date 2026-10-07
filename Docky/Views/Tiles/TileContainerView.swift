@@ -1203,6 +1203,10 @@ struct TileContainerView: View {
             "scale": layout.contentScale,
             "placement": preferences.tileLabelPlacement.rawValue,
             "fontSize": Double(String(format: "%.1f", preferences.tileLabelFontSize)) ?? 0,
+            "padding": [
+                "v": Double(layout.scaled(preferences.effectiveTileVerticalPadding)),
+                "icon": Double(layout.scaled(preferences.effectiveTileIconPadding)),
+            ],
             "tiles": snapshotTiles,
         ]
         let snapshotJSON: String = {
