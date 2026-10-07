@@ -766,40 +766,10 @@ struct TileView: View {
     /// surface's toggle is off. Everything in the dock — apps, Launchpad,
     /// Start Menu, folders, app folders, Trash, minimized windows —
     /// follows `showsDockTileLabels`; only the apps *inside* an opened
-    /// folder follow `showsAppFolderLabels`.
+    /// folder follow `showsAppFolderLabels`. Gating lives in
+    /// `TileLabelResolver` so layout math agrees with rendering.
     private var dockLabelText: String? {
-        switch tile.content {
-        case .app(let app):
-            guard app.displayedWidget == nil,
-                  preferences.showsDockTileLabels,
-                  !app.displayName.isEmpty
-            else { return nil }
-            return app.displayName
-        case .appFolder(let folder):
-            guard preferences.showsDockTileLabels,
-                  !folder.displayName.isEmpty
-            else { return nil }
-            return folder.displayName
-        case .launchpad(let launchpad):
-            guard preferences.showsDockTileLabels else { return nil }
-            return launchpad.title
-        case .startMenu(let menu):
-            guard preferences.showsDockTileLabels else { return nil }
-            return menu.title
-        case .folder(let folder):
-            guard preferences.showsDockTileLabels else { return nil }
-            return folder.displayName
-        case .minimizedWindow(let window):
-            guard preferences.showsDockTileLabels,
-                  !window.windowTitle.isEmpty
-            else { return nil }
-            return window.windowTitle
-        case .trash:
-            guard preferences.showsDockTileLabels else { return nil }
-            return String(localized: "Trash")
-        case .widget, .smartStack, .spacer, .flexibleSpacer, .divider:
-            return nil
-        }
+        TileLabelResolver.dockText(for: tile, preferences: preferences)
     }
 
     /// `displayedContent` wrapped in the shared label container. The icon
@@ -941,7 +911,7 @@ struct TileView: View {
 
     private var runningIndicatorOffsetVector: CGSize {
         let baseInward = max((layout.scaled(preferences.effectiveTileVerticalPadding) / 2), 2)
-        let totalInward = baseInward + preferences.effectiveActiveIndicatorOffset
+        let totalInward = baseInward + preferences.effectiveActiveIndicatorOffset + labelIndicatorClearance
 
         switch position {
         case .top:
@@ -952,6 +922,30 @@ struct TileView: View {
             return CGSize(width: totalInward, height: 0)
         case .right:
             return CGSize(width: -totalInward, height: 0)
+        }
+    }
+
+    /// Extra inward shift for the running indicator when the label sits
+    /// on the same edge the indicator is anchored to. Keeps the indicator
+    /// glued to the icon row instead of colliding with the label text.
+    /// Uniform for above/below (every tile reserves the row, labeled or
+    /// not); per-tile for sideways labels, where only labeled tiles grow.
+    private var labelIndicatorClearance: CGFloat {
+        guard preferences.showsDockTileLabels else { return 0 }
+        let labelEdge: Edge.Set = switch preferences.tileLabelPlacement {
+        case .above: .top
+        case .below: .bottom
+        case .leading: .leading
+        case .trailing: .trailing
+        }
+        guard labelEdge == runningIndicatorEdge else { return 0 }
+        switch preferences.tileLabelPlacement {
+        case .above, .below:
+            return TileLabelMetrics.rowHeight(fontSize: preferences.tileLabelFontSize)
+        case .leading, .trailing:
+            guard let text = dockLabelText, !text.isEmpty else { return 0 }
+            return TileLabelMetrics.sidewaysSlot(text: text, fontSize: preferences.tileLabelFontSize)
+                + TileLabelMetrics.spacing
         }
     }
 

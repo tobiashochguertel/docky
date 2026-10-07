@@ -2035,7 +2035,7 @@ struct TileContainerView: View {
     ) -> CGSize {
         let dividerExtent = tileSize * 0.5
 
-        return switch (position.isVertical, tile.content) {
+        let baseSize: CGSize = switch (position.isVertical, tile.content) {
         case (false, .divider):
             CGSize(width: dividerExtent, height: tileHeight)
         case (false, .app(let app)) where app.displayedWidget != nil:
@@ -2070,6 +2070,34 @@ struct TileContainerView: View {
             CGSize(width: tileHeight, height: spanExtent(for: effectiveWidgetSpan(stack.span, tileSize: tileSize, isVertical: true, compactWidgets: compactWidgets), baseTileSize: tileSize, tileSpacing: tileSpacing))
         case (true, _):
             CGSize(width: tileHeight, height: tileSize)
+        }
+        let growth = dockLabelGrowth(for: tile)
+        return CGSize(width: baseSize.width + growth.width, height: baseSize.height + growth.height)
+    }
+
+    /// Extra tile extent reserved for name labels. Above/below labels add
+    /// a uniform row to every tile (labeled or not) so icon, indicator,
+    /// and label rows stay aligned tile-to-tile. Sideways labels widen
+    /// only labeled tiles — heights stay uniform, so rows still align —
+    /// by exactly the slot `TileLabeledContent` renders into.
+    static func dockLabelGrowth(for tile: Tile) -> CGSize {
+        let preferences = DockyPreferences.shared
+        guard preferences.showsDockTileLabels else { return .zero }
+        switch preferences.tileLabelPlacement {
+        case .above, .below:
+            return CGSize(
+                width: 0,
+                height: TileLabelMetrics.rowHeight(fontSize: preferences.tileLabelFontSize)
+            )
+        case .leading, .trailing:
+            guard let text = TileLabelResolver.dockText(for: tile, preferences: preferences) else {
+                return .zero
+            }
+            return CGSize(
+                width: TileLabelMetrics.sidewaysSlot(text: text, fontSize: preferences.tileLabelFontSize)
+                    + TileLabelMetrics.spacing,
+                height: 0
+            )
         }
     }
 

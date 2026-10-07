@@ -15,9 +15,11 @@ stays put between releases.
   custom text color under Settings → Appearance → Tile Layout. The dock
   toggle covers everything in the dock — app tiles, app-folder tiles,
   Launchpad, Start Menu, folders, Trash, and minimized windows; the
-  folder toggle covers only the app names inside opened folders. Both
-  surfaces share the centralized `TileLabelView` / `TileLabeledContent`
-  implementation.
+  folder toggle covers only the app names inside opened folders. Tiles
+  grow to fit the label row — icons keep their full size — and every
+  tile reserves the same row, so icon, indicator, and label rows stay
+  aligned across apps, folders, and widgets. Both surfaces share the
+  centralized `TileLabelView` / `TileLabeledContent` implementation.
 - New profiles start as a copy of the active profile (tiles, widgets,
   and hidden apps) instead of empty.
 

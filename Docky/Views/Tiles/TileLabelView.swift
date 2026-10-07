@@ -58,12 +58,56 @@ struct TileLabelView: View {
     }
 }
 
+/// Resolves the dock label text for a tile. Centralizes the gating so
+/// `TileView` (rendering) and `TileContainerView.size` (layout math)
+/// agree on exactly which tiles are labeled.
+enum TileLabelResolver {
+    static func dockText(for tile: Tile, preferences: DockyPreferences) -> String? {
+        switch tile.content {
+        case .app(let app):
+            guard app.displayedWidget == nil,
+                  preferences.showsDockTileLabels,
+                  !app.displayName.isEmpty
+            else { return nil }
+            return app.displayName
+        case .appFolder(let folder):
+            guard preferences.showsDockTileLabels,
+                  !folder.displayName.isEmpty
+            else { return nil }
+            return folder.displayName
+        case .launchpad(let launchpad):
+            guard preferences.showsDockTileLabels else { return nil }
+            return launchpad.title
+        case .startMenu(let menu):
+            guard preferences.showsDockTileLabels else { return nil }
+            return menu.title
+        case .folder(let folder):
+            guard preferences.showsDockTileLabels else { return nil }
+            return folder.displayName
+        case .minimizedWindow(let window):
+            guard preferences.showsDockTileLabels,
+                  !window.windowTitle.isEmpty
+            else { return nil }
+            return window.windowTitle
+        case .trash:
+            guard preferences.showsDockTileLabels else { return nil }
+            return String(localized: "Trash")
+        case .widget, .smartStack, .spacer, .flexibleSpacer, .divider:
+            return nil
+        }
+    }
+}
+
 /// Wraps an icon with an optional name label at the shared placement.
-/// `label` is `nil` when the surface's toggle is off — renders just the icon.
+/// Above/below labels grow the tile by a uniform reserved row, so every
+/// tile's icon, indicator, and label rows line up and icons keep their
+/// full size. Sideways labels grow only labeled tiles (heights stay
+/// uniform, so rows still align) and the label slot fits its text.
 struct TileLabeledContent<Content: View>: View {
     let label: String?
     let placement: TileLabelPlacement
     let content: Content
+    @Bindable private var preferences = DockyPreferences.shared
 
     init(label: String?, placement: TileLabelPlacement, @ViewBuilder content: () -> Content) {
         self.label = label
@@ -79,32 +123,105 @@ struct TileLabeledContent<Content: View>: View {
                 VStack(spacing: TileLabelMetrics.spacing) {
                     content
                     TileLabelView(text: label)
+                        .frame(height: labelHeight, alignment: .top)
                 }
             case .above:
                 VStack(spacing: TileLabelMetrics.spacing) {
                     TileLabelView(text: label)
+                        .frame(height: labelHeight, alignment: .bottom)
                     content
                 }
-            case .leading:
-                HStack(spacing: TileLabelMetrics.spacing) {
-                    TileLabelView(text: label)
-                    content
+            case .leading, .trailing:
+                GeometryReader { proxy in
+                    HStack(spacing: TileLabelMetrics.spacing) {
+                        if placement == .leading {
+                            TileLabelView(text: label)
+                                .frame(width: sidewaysSlot)
+                        }
+                        content
+                            .frame(
+                                width: max(0, proxy.size.width - sidewaysSlot - TileLabelMetrics.spacing),
+                                height: proxy.size.height
+                            )
+                        if placement == .trailing {
+                            TileLabelView(text: label)
+                                .frame(width: sidewaysSlot)
+                        }
+                    }
                 }
-            case .trailing:
-                HStack(spacing: TileLabelMetrics.spacing) {
-                    content
-                    TileLabelView(text: label)
+            }
+        } else if reservesRow {
+            // Unlabeled tile in a labeled dock: hold the row with empty
+            // space so this tile's icon and indicator rows line up with
+            // its labeled neighbors instead of staircasing.
+            VStack(spacing: TileLabelMetrics.spacing) {
+                if placement == .above {
+                    Color.clear.frame(height: labelHeight)
+                }
+                content
+                if placement == .below {
+                    Color.clear.frame(height: labelHeight)
                 }
             }
         } else {
             content
         }
     }
+
+    /// Only vertical placements reserve a row on unlabeled tiles.
+    /// Sideways labels don't affect heights, so rows align without it —
+    /// and unlabeled tiles keep their compact width.
+    private var reservesRow: Bool {
+        preferences.showsDockTileLabels && (placement == .above || placement == .below)
+    }
+
+    private var labelHeight: CGFloat {
+        TileLabelMetrics.labelHeight(fontSize: preferences.tileLabelFontSize)
+    }
+
+    private var sidewaysSlot: CGFloat {
+        TileLabelMetrics.sidewaysSlot(
+            text: label ?? "",
+            fontSize: preferences.tileLabelFontSize
+        )
+    }
 }
 
 enum TileLabelMetrics {
     /// Gap between the icon and its label.
     static let spacing: CGFloat = 2
-    /// Extra height a popover grid cell needs once its label is visible.
-    static let popoverLabelHeight: CGFloat = 18
+
+    /// Height of the label text itself for a given point size.
+    static func labelHeight(fontSize: CGFloat) -> CGFloat {
+        ceil(fontSize * 1.2)
+    }
+
+    /// Full row a label occupies: text plus the icon gap.
+    static func rowHeight(fontSize: CGFloat) -> CGFloat {
+        labelHeight(fontSize: fontSize) + spacing
+    }
+
+    /// Width slot for a sideways (leading/trailing) label: just wide
+    /// enough for its text, capped so one long name can't stretch the
+    /// dock. Must match what `TileContainerView.size` adds to the tile,
+    /// both call this.
+    static let maxSidewaysLabelWidth: CGFloat = 96
+
+    static func sidewaysSlot(text: String, fontSize: CGFloat) -> CGFloat {
+        let measured = (text as NSString).size(withAttributes: [
+            .font: NSFont.systemFont(ofSize: fontSize, weight: .medium),
+        ]).width
+        return min(ceil(measured), maxSidewaysLabelWidth)
+    }
+
+    /// Uniform row every dock tile reserves when dock labels are on.
+    /// Uniformity is what keeps icon rows, indicator rows, and label
+    /// rows aligned across tile types (apps, folders, widgets alike) —
+    /// labeled or not, each tile grows by exactly this amount and icons
+    /// stay at their full size instead of shrinking.
+    static func dockRowAddition() -> CGFloat {
+        let preferences = DockyPreferences.shared
+        guard preferences.showsDockTileLabels else { return 0 }
+        return rowHeight(fontSize: preferences.tileLabelFontSize)
+    }
 }

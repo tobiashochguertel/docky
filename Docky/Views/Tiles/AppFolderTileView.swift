@@ -455,6 +455,9 @@ struct AppFolderPopoverView: View {
         .onChange(of: preferences.tileLabelPlacement) { _ in
             onPopoverSizeChange(popoverSize)
         }
+        .onChange(of: preferences.tileLabelFontSize) { _ in
+            onPopoverSizeChange(popoverSize)
+        }
         .onChange(of: isPresented) { presented in
             // Reset reorder mode when the popover closes so re-opening
             // always starts in the standard launch-on-tap state.
@@ -497,13 +500,13 @@ struct AppFolderPopoverView: View {
                 if preferences.showsAppFolderLabels,
                    preferences.tileLabelPlacement == .above {
                     TileLabelView(text: app.displayName)
-                        .frame(width: Self.itemWidth)
+                        .frame(width: Self.itemWidth, height: popoverLabelHeight)
                 }
                 iconImage(for: app)
                 if preferences.showsAppFolderLabels,
                    preferences.tileLabelPlacement != .above {
                     TileLabelView(text: app.displayName)
-                        .frame(width: Self.itemWidth)
+                        .frame(width: Self.itemWidth, height: popoverLabelHeight)
                 }
             }
             .opacity(isBeingDragged ? 0 : (isReorderMode ? 0.85 : 1))
@@ -728,11 +731,18 @@ struct AppFolderPopoverView: View {
     static func popoverSize(forAppCount appCount: Int) -> CGSize {
         let rows = max(Int(ceil(Double(appCount) / Double(columns))), 1)
         let width = CGFloat(columns) * itemWidth + CGFloat(columns - 1) * itemSpacing + contentPadding * 2
-        // Labeled cells stack the 96pt icon plus the shared name label.
-        let effectiveItemHeight = itemHeight + (DockyPreferences.shared.showsAppFolderLabels ? TileLabelMetrics.popoverLabelHeight : 0)
+        // Labeled cells stack the 96pt icon plus the shared name label row.
+        let preferences = DockyPreferences.shared
+        let effectiveItemHeight = itemHeight + (preferences.showsAppFolderLabels
+            ? TileLabelMetrics.rowHeight(fontSize: preferences.tileLabelFontSize)
+            : 0)
         let gridHeight = CGFloat(rows) * effectiveItemHeight + CGFloat(max(rows - 1, 0)) * itemSpacing
         let height = min(gridHeight + contentPadding * 2 + headerHeight + 16, maxHeight)
         return CGSize(width: width, height: height)
+    }
+
+    private var popoverLabelHeight: CGFloat {
+        TileLabelMetrics.labelHeight(fontSize: preferences.tileLabelFontSize)
     }
 
     private func icon(forBundleIdentifier bundleIdentifier: String) -> NSImage {
