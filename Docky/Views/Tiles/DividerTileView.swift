@@ -40,6 +40,8 @@ struct DividerTileView: View {
 
     private var dividerContextActions: [ContextAction] {
         [
+            .action(DockyVersion.menuHeader, isEnabled: false) {},
+            .divider,
             .action(preferences.autohidesWindow ? "Turn Hiding Off" : "Turn Hiding On") {
                 preferences.autohidesWindow.toggle()
             },

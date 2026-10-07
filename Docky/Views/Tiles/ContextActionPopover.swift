@@ -23,6 +23,8 @@ struct ContextAction: Identifiable {
     let customView: NSView?
     let isDestructive: Bool
     let isOn: Bool
+    /// Disabled items render grayed and ignore clicks (e.g. headers).
+    let isEnabled: Bool
     let children: [ContextAction]
     let childrenProvider: (() -> [ContextAction])?
     let handler: () -> Void
@@ -32,6 +34,7 @@ struct ContextAction: Identifiable {
         image: NSImage? = nil,
         isDestructive: Bool = false,
         isOn: Bool = false,
+        isEnabled: Bool = true,
         handler: @escaping () -> Void
     ) -> Self {
         Self(
@@ -41,6 +44,7 @@ struct ContextAction: Identifiable {
             customView: nil,
             isDestructive: isDestructive,
             isOn: isOn,
+            isEnabled: isEnabled,
             children: [],
             childrenProvider: nil,
             handler: handler
@@ -55,6 +59,7 @@ struct ContextAction: Identifiable {
             customView: nil,
             isDestructive: false,
             isOn: false,
+            isEnabled: true,
             children: children,
             childrenProvider: nil,
             handler: {}
@@ -73,6 +78,7 @@ struct ContextAction: Identifiable {
             customView: nil,
             isDestructive: false,
             isOn: false,
+            isEnabled: true,
             children: [],
             childrenProvider: childrenProvider,
             handler: {}
@@ -87,6 +93,7 @@ struct ContextAction: Identifiable {
             customView: view,
             isDestructive: false,
             isOn: false,
+            isEnabled: true,
             children: [],
             childrenProvider: nil,
             handler: {}
@@ -101,6 +108,7 @@ struct ContextAction: Identifiable {
             customView: nil,
             isDestructive: false,
             isOn: false,
+            isEnabled: true,
             children: [],
             childrenProvider: nil,
             handler: {}
@@ -290,6 +298,7 @@ struct ContextActionMenuPresenter: NSViewRepresentable {
                 item.representedObject = action
                 item.state = action.isOn ? .on : .off
                 item.image = thumbnailImage(action.image)
+                item.isEnabled = action.isEnabled
                 if action.isDestructive {
                     item.attributedTitle = NSAttributedString(
                         string: action.title,
