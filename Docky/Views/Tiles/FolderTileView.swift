@@ -9,6 +9,7 @@ import SwiftUI
 struct FolderTileView: View {
     let tile: FolderTile
     let isOpen: Bool
+    var debugGeometryID: String? = nil
     @ObservedObject private var permissions = PermissionsService.shared
     @ObservedObject private var folderAccess = FolderAccessService.shared
     @Bindable private var preferences = DockyPreferences.shared
@@ -55,11 +56,13 @@ struct FolderTileView: View {
 
     private var folderIcon: some View {
         GeometryReader { proxy in
-            Image(nsImage: resolvedFolderIconImage)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .padding(overrideIconPadding(in: proxy.size))
+            debugPaint(
+                Image(nsImage: resolvedFolderIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .padding(overrideIconPadding(in: proxy.size))
+            )
         }
     }
 
@@ -92,7 +95,7 @@ struct FolderTileView: View {
         let verticalStep: CGFloat = 4
         let centeredBaseOffset = CGFloat(preview.count - 1) / 2
 
-        return ZStack {
+        return debugPaint(ZStack {
             ForEach(Array(preview.enumerated()).reversed(), id: \.element) { pair in
                 let depth = CGFloat(pair.offset)
 
@@ -105,14 +108,14 @@ struct FolderTileView: View {
                     .offset(y: (centeredBaseOffset - CGFloat(pair.offset)) * verticalStep)
             }
         }
-        .frame(width: size.width, height: size.height, alignment: .center)
+        .frame(width: size.width, height: size.height, alignment: .center))
     }
 
     private func fallbackStack(in size: CGSize) -> some View {
         let side = min(size.width, size.height) * 0.8
         let offsets: [CGFloat] = [-4, 0, 4]
 
-        return ZStack {
+        return debugPaint(ZStack {
             ForEach(Array(offsets.enumerated()), id: \.offset) { index, offset in
                 Image(nsImage: IconCacheService.shared.previewIcon(forFileURL: tile.url))
                     .resizable()
@@ -124,7 +127,7 @@ struct FolderTileView: View {
                     .scaleEffect(index == 1 ? 1 : 0.92)
             }
         }
-        .frame(width: size.width, height: size.height, alignment: .center)
+        .frame(width: size.width, height: size.height, alignment: .center))
     }
 
     private var reloadKey: String {
@@ -133,6 +136,20 @@ struct FolderTileView: View {
 
     private var watcherOwnerID: String {
         "folder-tile:\(tile.url.standardizedFileURL.path)"
+    }
+
+    /// Records the painted folder visual extent for debug inspection.
+    @ViewBuilder
+    private func debugPaint<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            }
+        } else {
+            view
+        }
     }
 }
 

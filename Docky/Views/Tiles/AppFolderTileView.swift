@@ -12,6 +12,7 @@ struct AppFolderTileView: View {
     let tile: AppFolderTile
     let cornerRadius: CGFloat
     let suppressesGroupedOpenedBackdrop: Bool
+    var debugGeometryID: String? = nil
     private let dockSettings = DockSettingsService.shared
     @ObservedObject private var layout = DockLayoutService.shared
     @Bindable private var preferences = DockyPreferences.shared
@@ -22,11 +23,13 @@ struct AppFolderTileView: View {
     init(
         tile: AppFolderTile,
         cornerRadius: CGFloat,
-        suppressesGroupedOpenedBackdrop: Bool = false
+        suppressesGroupedOpenedBackdrop: Bool = false,
+        debugGeometryID: String? = nil
     ) {
         self.tile = tile
         self.cornerRadius = cornerRadius
         self.suppressesGroupedOpenedBackdrop = suppressesGroupedOpenedBackdrop
+        self.debugGeometryID = debugGeometryID
         self._layout = ObservedObject(wrappedValue: DockLayoutService.shared)
         self._preferences = Bindable(wrappedValue: DockyPreferences.shared)
         self._store = ObservedObject(wrappedValue: TileStore.shared)
@@ -127,8 +130,13 @@ struct AppFolderTileView: View {
     @ViewBuilder
     private var content: some View {
         GeometryReader { geo in
-            displayContent(in: geo.size)
-                .padding(folderChromeMargin(in: geo.size))
+            let margin = folderChromeMargin(in: geo.size)
+            let inner = CGSize(
+                width: max(0, geo.size.width - margin * 2),
+                height: max(0, geo.size.height - margin * 2)
+            )
+            displayContent(in: inner)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
                     Color.primary.opacity(showsBackdrop ? 0.2 : 0)
                         .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
@@ -187,18 +195,9 @@ struct AppFolderTileView: View {
         let side = min(size.width, size.height) * 0.36
         let gap = min(size.width, size.height) * (preferences.effectiveTileClipShape == .circle ? 0 : 0.06)
 
-        return ZStack {
-            Color.clear
-                .background(.ultraThinMaterial)
-                .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .strokeBorder(.white.opacity(0.1), lineWidth: 1)
-                }
-                .dockyGlassBorder(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-                .padding(.top, 1)
-                .padding(.bottom, 2)
-
+        // Background hugs the padded grid (rather than filling the slot)
+        // so folder tiles keep optical margins like app icons do.
+        return debugPaint(
             VStack(spacing: gap) {
                 ForEach(0..<2, id: \.self) { row in
                     HStack(spacing: gap) {
@@ -228,7 +227,16 @@ struct AppFolderTileView: View {
                 }
             }
             .padding(size.width * 0.12)
-        }
+            .background(.ultraThinMaterial)
+            .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(.white.opacity(0.1), lineWidth: 1)
+            }
+            .dockyGlassBorder(in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .padding(.top, 1)
+            .padding(.bottom, 2)
+        )
     }
 
     @ViewBuilder
@@ -239,7 +247,7 @@ struct AppFolderTileView: View {
             let additionalApps = Array(displayedApps.dropFirst().suffix(2))
             let chromeInset = floor(min(size.width, size.height) * 3 / 32)
 
-            ZStack {
+            debugPaint(ZStack {
                 ForEach(Array(additionalApps.enumerated()), id: \.element.bundleIdentifier) { index, app in
                     let depth = additionalApps.count - index
                     appStackTile(for: app, in: size, chromeInset: chromeInset)
@@ -251,7 +259,7 @@ struct AppFolderTileView: View {
                 }
 
                 appStackTile(for: topApp, in: size, chromeInset: chromeInset)
-            }
+            })
             .frame(width: size.width, height: size.height)
         } else {
             iconGrid(in: size)
@@ -275,6 +283,20 @@ struct AppFolderTileView: View {
     private func stackOffset(for depth: Int) -> CGFloat {
         let magnitude = CGFloat(depth / 2) * 2.5
         return depth.isMultiple(of: 2) ? magnitude : -magnitude
+    }
+
+    /// Records the painted folder visual extent for debug inspection.
+    @ViewBuilder
+    private func debugPaint<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            }
+        } else {
+            view
+        }
     }
 
     @ViewBuilder

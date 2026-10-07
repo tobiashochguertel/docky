@@ -16,6 +16,7 @@ struct AppTileView: View {
     /// pass their own padding here, since per-bundle override padding
     /// only applies to real app overrides.
     var iconOverridePaddingFraction: CGFloat? = nil
+    var debugGeometryID: String? = nil
     @Bindable private var preferences = DockyPreferences.shared
     @ObservedObject private var workspace = WorkspaceService.shared
     @ObservedObject private var windowRegistry = WindowRegistry.shared
@@ -52,13 +53,27 @@ struct AppTileView: View {
     private func iconView(in size: CGSize) -> some View {
         if shouldApplyCircleClip {
             ZStack {
-                baseIconView(in: size)
+                debugPaint(baseIconView(in: size))
                     .clipShape(Circle())
             }
             .dockyGlass()
             .padding(transparencyCompensationInset)
         } else {
-            baseIconView(in: size)
+            debugPaint(baseIconView(in: size))
+        }
+    }
+
+    /// Records the painted icon extent for debug inspection.
+    @ViewBuilder
+    private func debugPaint<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            }
+        } else {
+            view
         }
     }
 

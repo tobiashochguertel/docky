@@ -1218,6 +1218,9 @@ struct TileContainerView: View {
                 if let label = sub.label {
                     entry["labelM"] = [(label.width * 10).rounded() / 10, (label.height * 10).rounded() / 10]
                 }
+                if let painted = sub.painted {
+                    entry["paintM"] = [(painted.width * 10).rounded() / 10, (painted.height * 10).rounded() / 10]
+                }
             }
             switch tile.content {
             case .appFolder(let folder):

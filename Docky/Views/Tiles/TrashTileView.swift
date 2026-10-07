@@ -8,19 +8,22 @@ import SwiftUI
 
 struct TrashTileView: View {
     var isDropTarget: Bool = false
+    var debugGeometryID: String? = nil
     @ObservedObject private var trash = TrashService.shared
     @Bindable private var preferences = DockyPreferences.shared
 
     var body: some View {
         GeometryReader { proxy in
-            Image(nsImage: icon)
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .padding(overridePadding(in: proxy.size))
-                .brightness(isDropTarget ? -0.35 : 0)
-                .scaleEffect(isDropTarget ? 1.1 : 1)
-                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDropTarget)
+            debugPaint(
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .padding(overridePadding(in: proxy.size))
+                    .brightness(isDropTarget ? -0.35 : 0)
+                    .scaleEffect(isDropTarget ? 1.1 : 1)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: isDropTarget)
+            )
         }
     }
 
@@ -43,5 +46,19 @@ struct TrashTileView: View {
         return NSImage(named: state.systemImageName)
             ?? NSImage(named: TrashIconState.empty.systemImageName)
             ?? NSImage()
+    }
+
+    /// Records the painted icon extent for debug inspection.
+    @ViewBuilder
+    private func debugPaint<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            }
+        } else {
+            view
+        }
     }
 }

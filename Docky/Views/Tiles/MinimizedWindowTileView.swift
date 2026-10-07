@@ -8,13 +8,14 @@ import SwiftUI
 
 struct MinimizedWindowTileView: View {
     let tile: AppWindow
+    var debugGeometryID: String? = nil
     @Bindable private var preferences = DockyPreferences.shared
     @ObservedObject private var workspace = WorkspaceService.shared
 
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                previewCard(in: geo.size)
+                debugPaint(previewCard(in: geo.size))
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
                 Image(nsImage: icon)
@@ -72,5 +73,19 @@ struct MinimizedWindowTileView: View {
             return 0
         }
         return preferences.appIconOverridePadding(forBundleIdentifier: tile.bundleIdentifier) * side
+    }
+
+    /// Records the painted card extent for debug inspection.
+    @ViewBuilder
+    private func debugPaint<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            }
+        } else {
+            view
+        }
     }
 }

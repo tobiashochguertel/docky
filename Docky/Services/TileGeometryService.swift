@@ -13,6 +13,7 @@ import Foundation
 struct TileSubFrames {
     var icon: CGSize?
     var label: CGSize?
+    var painted: CGSize?
 }
 
 final class TileGeometryService {
@@ -40,6 +41,16 @@ final class TileGeometryService {
         guard recording else { return }
         lock.withLock {
             frames[id, default: TileSubFrames()].label = size
+        }
+        postThrottled()
+    }
+
+    /// Painted visual extent inside the icon slot (folder mosaic,
+    /// minimized card, raw icon image). Same gating as the rest.
+    func recordPainted(id: String, size: CGSize) {
+        guard recording else { return }
+        lock.withLock {
+            frames[id, default: TileSubFrames()].painted = size
         }
         postThrottled()
     }

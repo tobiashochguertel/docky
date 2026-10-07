@@ -1183,16 +1183,18 @@ struct TileView: View {
                 AppTileView(
                     tile: app,
                     clipShape: preferences.effectiveTileClipShape,
-                    transparencyCompensationInset: tileChromeInset
+                    transparencyCompensationInset: tileChromeInset,
+                    debugGeometryID: tile.id
                 )
             }
         case .minimizedWindow(let window):
-            MinimizedWindowTileView(tile: window)
+            MinimizedWindowTileView(tile: window, debugGeometryID: tile.id)
         case .appFolder(let folder):
             AppFolderTileView(
                 tile: folder,
                 cornerRadius: nonAppTileCornerRadius,
-                suppressesGroupedOpenedBackdrop: isDragging
+                suppressesGroupedOpenedBackdrop: isDragging,
+                debugGeometryID: tile.id
             )
         case .launchpad(let launchpad):
             AppTileView(
@@ -1203,7 +1205,8 @@ struct TileView: View {
                 clipShape: preferences.effectiveTileClipShape,
                 transparencyCompensationInset: 0,
                 iconOverrideURL: preferences.effectiveLaunchpadIconOverrideURL,
-                iconOverridePaddingFraction: preferences.launchpadIconPaddingFraction
+                iconOverridePaddingFraction: preferences.launchpadIconPaddingFraction,
+                debugGeometryID: tile.id
             )
         case .startMenu(let menu):
             AppTileView(
@@ -1214,7 +1217,8 @@ struct TileView: View {
                 clipShape: preferences.effectiveTileClipShape,
                 transparencyCompensationInset: 0,
                 iconOverrideURL: preferences.effectiveStartMenuIconOverrideURL,
-                iconOverridePaddingFraction: preferences.effectiveStartMenuIconOverridePadding
+                iconOverridePaddingFraction: preferences.effectiveStartMenuIconOverridePadding,
+                debugGeometryID: tile.id
             )
         case .widget(let widget):
             WidgetTileView(
@@ -1241,13 +1245,14 @@ struct TileView: View {
                     sortMode: folderSortMode
                 ),
                 isOpen: isFolderPopoverPresented,
+                debugGeometryID: tile.id
             )
         case .spacer, .flexibleSpacer:
             SpacerTileView()
         case .divider:
             DividerTileView(tileID: tile.id)
         case .trash:
-            TrashTileView(isDropTarget: isTrashDropTarget)
+            TrashTileView(isDropTarget: isTrashDropTarget, debugGeometryID: tile.id)
         }
     }
 
