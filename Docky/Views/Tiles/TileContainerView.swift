@@ -75,6 +75,7 @@ struct TileContainerView: View {
         let scrollableSectionLayout = scrollableSectionLayout(in: proxy)
 
         let anchorOffset = magnificationAnchorOffset
+        reportLayoutIfNeeded()
         return ZStack(alignment: .topLeading) {
             contentStack(scrollableSectionLayout: scrollableSectionLayout)
                 .offset(
@@ -1137,6 +1138,55 @@ struct TileContainerView: View {
     private func publishChromeGrowth(_ value: CGFloat) {
         DispatchQueue.main.async {
             DockChromeMetricsService.shared.setAlongAxisGrowth(value)
+        }
+    }
+
+    /// Reports per-tile geometry to the debug log when debug logging is
+    /// on. Gated up front so the string work costs nothing otherwise;
+    /// the service itself dedupes unchanged layouts and throttles to
+    /// one report per second.
+    private func reportLayoutIfNeeded() {
+        guard DockyDebugLogging.isEnabled else { return }
+        let tiles = displayTiles
+        var lines: [String] = []
+        lines.append(
+            "pos=\(position) tile=\(Int(effectiveTileSize))x\(Int(tileHeight)) "
+                + "spacing=\(Int(effectiveTileSpacing)) scale=\(layout.contentScale) "
+                + "labels=\(preferences.showsDockTileLabels ? "dock" : "-")"
+                + "\(preferences.showsAppFolderLabels ? "+folder" : "") "
+                + "placement=\(preferences.tileLabelPlacement.rawValue) "
+                + "font=\(preferences.tileLabelFontSize)"
+        )
+        var signature = lines[0] + "|\(tiles.count)"
+        for tile in tiles {
+            let size = Self.size(
+                for: tile,
+                tileSize: effectiveTileSize,
+                tileHeight: tileHeight,
+                tileSpacing: effectiveTileSpacing,
+                position: position,
+                compactWidgets: layout.compactsWidgetsForOverflow
+            )
+            let kind: String = switch tile.content {
+            case .app: "app"
+            case .minimizedWindow: "min"
+            case .appFolder: "appFolder"
+            case .launchpad: "launchpad"
+            case .startMenu: "startMenu"
+            case .widget: "widget"
+            case .smartStack: "smartStack"
+            case .folder: "folder"
+            case .spacer: "spacer"
+            case .flexibleSpacer: "flexSpacer"
+            case .divider: "divider"
+            case .trash: "trash"
+            }
+            let label = TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "-"
+            signature += "|\(tile.id)=\(Int(size.width))x\(Int(size.height))"
+            lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) label=\(label)")
+        }
+        DockyDebugService.shared.logLayoutIfChanged(signature: signature) {
+            "dock layout (\(tiles.count) tiles):\n" + lines.joined(separator: "\n")
         }
     }
 

@@ -516,6 +516,23 @@ struct TileView: View {
         }
     }
 
+    /// Technical overlay for debugging tile geometry: rendered frame
+    /// size, vertical padding, icon padding, label row, and the resolved
+    /// label text. Only ever visible while the debug switch is on.
+    @ViewBuilder
+    private var layoutDebugReadout: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("\(Int(globalTileFrame.size.width))×\(Int(globalTileFrame.size.height))")
+            Text("vPad \(Int(layout.scaled(preferences.effectiveTileVerticalPadding))) iPad \(Int(layout.scaled(preferences.effectiveTileIconPadding)))")
+            Text("label \(dockLabelText ?? "–")")
+        }
+        .font(.system(size: 8, design: .monospaced))
+        .foregroundStyle(.white)
+        .padding(3)
+        .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 3))
+        .allowsHitTesting(false)
+    }
+
     /// Effective drop shadow applied behind the tile's icon content.
     /// Returns `Color.clear` when no shadow color is set, combined
     /// with a 0 radius below, that makes `.shadow(...)` a true no-op.
@@ -564,6 +581,12 @@ struct TileView: View {
                         .padding(appliedTileIconPadding)
                 }
             }
+            .overlay(alignment: .topLeading) {
+                if preferences.showsLayoutOverlay {
+                    layoutDebugReadout
+                }
+            }
+            .border(preferences.showsLayoutOverlay ? Color.cyan : Color.clear)
             .contentShape(Rectangle())
             .onHover(perform: updateHoverState)
             .onTapGesture(perform: handleTap)
@@ -725,32 +748,34 @@ struct TileView: View {
             }
     }
 
+    /// Spanned/widget chrome stays in the inset GeometryReader box.
+    /// Plain 1x1 tiles (apps, app folders, launchpad, ...) share the
+    /// padding branch in `laidOutContent` so their icon, indicator, and
+    /// label rows land on exactly the same rows tile-to-tile.
+    @ViewBuilder
+    private var widgetChromeBox: some View {
+        GeometryReader { proxy in
+            labeledContent
+                .frame(
+                    width: max(0, proxy.size.width - contentInsets.width * 2),
+                    height: max(0, proxy.size.height - contentInsets.height * 2)
+                )
+                .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+    }
+
     @ViewBuilder
     private var laidOutContent: some View {
         switch tile.content {
         case .app(let app) where app.displayedWidget != nil:
-            GeometryReader { proxy in
-                labeledContent
-                    .frame(
-                        width: max(0, proxy.size.width - contentInsets.width * 2),
-                        height: max(0, proxy.size.height - contentInsets.height * 2)
-                    )
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            }
-        case .appFolder, .launchpad, .startMenu, .widget, .smartStack:
-            GeometryReader { proxy in
-                labeledContent
-                    .frame(
-                        width: max(0, proxy.size.width - contentInsets.width * 2),
-                        height: max(0, proxy.size.height - contentInsets.height * 2)
-                    )
-                    .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
-            }
+            widgetChromeBox
+        case .widget, .smartStack:
+            widgetChromeBox
         case .folder, .trash:
             labeledContent
                 .padding(contentPaddingEdges, contentPadding)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        case .app, .minimizedWindow, .spacer, .flexibleSpacer, .divider:
+        case .app, .appFolder, .launchpad, .startMenu, .minimizedWindow, .spacer, .flexibleSpacer, .divider:
             labeledContent
                 .background(appFolderDropTargetBackdrop)
                 .padding(contentPaddingEdges, contentPadding)

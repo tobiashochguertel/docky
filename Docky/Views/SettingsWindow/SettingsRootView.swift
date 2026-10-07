@@ -32,6 +32,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
     case permissions
     case updates
     case feedback
+    case debug
 
     var id: String { rawValue }
 
@@ -63,6 +64,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .permissions: "Permissions"
         case .updates: "Updates"
         case .feedback: "Feedback"
+        case .debug: "Debug"
         }
     }
 
@@ -94,6 +96,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .permissions: "lock.shield"
         case .updates: "arrow.trianglehead.clockwise"
         case .feedback: "envelope"
+        case .debug: "ladybug"
         }
     }
 
@@ -125,6 +128,7 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
         case .permissions: .red
         case .updates: .blue
         case .feedback: .orange
+        case .debug: .gray
         }
     }
 
@@ -171,7 +175,8 @@ private let settingsSections: [SettingsSection] = [
         .updates
     ]),
     SettingsSection(id: "support", title: "Support", panes: [
-        .feedback
+        .feedback,
+        .debug
     ])
 ]
 
@@ -394,6 +399,8 @@ private struct SettingsDetailView: View {
             UpdatesSettingsView()
         case .feedback:
             FeedbackSettingsView()
+        case .debug:
+            DebugSettingsView()
         }
     }
 }

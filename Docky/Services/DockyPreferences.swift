@@ -1774,6 +1774,16 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Whether dock tiles paint a technical readout (frame size, label
+    /// row, paddings) over their icons. Debug switch, intentionally left
+    /// out of every reset method so diagnosing survives a reset.
+    var showsLayoutOverlay: Bool {
+        didSet {
+            guard showsLayoutOverlay != oldValue else { return }
+            defaults.set(showsLayoutOverlay, forKey: Keys.showsLayoutOverlay)
+        }
+    }
+
     /// Whether `docky://install-widget` links may install a widget. Off by
     /// default so a web page can't drive a native-code install unprompted.
     var allowsWidgetLinkInstalls: Bool {
@@ -3621,6 +3631,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let tileLabelPlacement = "docky.tileLabelPlacement"
         static let tileLabelFontSize = "docky.tileLabelFontSize"
         static let tileLabelColor = "docky.tileLabelColor"
+        static let showsLayoutOverlay = "docky.showsLayoutOverlay"
         static let allowsWidgetLinkInstalls = "docky.allowsWidgetLinkInstalls"
         static let folderBadgeMode = "docky.folderBadgeMode"
         static let folderBadgePreviewStyle = "docky.folderBadgePreviewStyle"
@@ -3737,6 +3748,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let tileLabelPlacement: TileLabelPlacement = .below
         static let tileLabelFontSize: CGFloat = 11
         static let tileLabelColor: DockColor? = nil
+        static let showsLayoutOverlay = false
         static let allowsWidgetLinkInstalls = false
         static let folderBadgeMode: FolderBadgeMode = .combined
         static let folderBadgePreviewStyle: FolderBadgePreviewStyle = .dot
@@ -3876,6 +3888,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         let storedTileLabelPlacement = defaults.string(forKey: Keys.tileLabelPlacement)
         let storedTileLabelFontSize = defaults.object(forKey: Keys.tileLabelFontSize) as? Double
         let storedTileLabelColor = defaults.data(forKey: Keys.tileLabelColor)
+        let storedShowsLayoutOverlay = defaults.object(forKey: Keys.showsLayoutOverlay) as? Bool
         let storedAllowsWidgetLinkInstalls = defaults.object(forKey: Keys.allowsWidgetLinkInstalls) as? Bool
         let storedFolderBadgeMode = defaults.string(forKey: Keys.folderBadgeMode)
         let storedFolderBadgePreviewStyle = defaults.string(forKey: Keys.folderBadgePreviewStyle)
@@ -4009,6 +4022,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         self.tileLabelPlacement = storedTileLabelPlacement.flatMap(TileLabelPlacement.init(rawValue:)) ?? DefaultValues.tileLabelPlacement
         self.tileLabelFontSize = min(max(storedTileLabelFontSize.map { CGFloat($0) } ?? DefaultValues.tileLabelFontSize, 8), 20)
         self.tileLabelColor = Self.decodeColor(from: storedTileLabelColor) ?? DefaultValues.tileLabelColor
+        self.showsLayoutOverlay = storedShowsLayoutOverlay ?? DefaultValues.showsLayoutOverlay
         self.allowsWidgetLinkInstalls = storedAllowsWidgetLinkInstalls ?? DefaultValues.allowsWidgetLinkInstalls
         self.folderBadgeMode = storedFolderBadgeMode
             .flatMap(FolderBadgeMode.init(rawValue:))

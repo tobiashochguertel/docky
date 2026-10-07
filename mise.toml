@@ -14,6 +14,30 @@ run = "uv run --script scripts/docky.py deploy"
 description = "Build, sign, and deploy Docky in one step"
 run = "uv run --script scripts/docky.py redeploy"
 
+[tasks."docky:restart"]
+description = "Quit and relaunch the installed app (no rebuild)"
+run = "uv run --script scripts/docky.py restart"
+
+[tasks."docky:logs"]
+description = "Show the last 50 lines of the debug log"
+run = "uv run --script scripts/docky.py logs --tail 50"
+
+[tasks."docky:debug-on"]
+description = "Enable debug file logging (takes effect immediately)"
+run = "uv run --script scripts/docky.py debug --enable"
+
+[tasks."docky:debug-off"]
+description = "Disable debug file logging"
+run = "uv run --script scripts/docky.py debug --disable"
+
+[tasks."docky:overlay-on"]
+description = "Show the technical layout overlay (restarts the app)"
+run = "uv run --script scripts/docky.py overlay --enable"
+
+[tasks."docky:overlay-off"]
+description = "Hide the technical layout overlay (restarts the app)"
+run = "uv run --script scripts/docky.py overlay --disable"
+
 [tasks."docky:updates-on"]
 description = "Re-enable Sparkle automatic update checks"
 run = "uv run --script scripts/docky.py updates --enable"

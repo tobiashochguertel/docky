@@ -158,6 +158,26 @@ def kill_strays() -> None:
             subprocess.run(["kill", pid], capture_output=True, check=False)
 
 
+def launch_and_confirm() -> None:
+    subprocess.run(["open", str(INSTALLED_APP)], check=True)
+    for _ in range(20):
+        if docky_pids():
+            logger.info("Docky relaunched from {}", INSTALLED_APP)
+            return
+        time.sleep(0.5)
+    raise typer.Exit("Docky did not relaunch; check Console.app.")
+
+
+def restart_app() -> None:
+    quit_docky()
+    kill_strays()
+    launch_and_confirm()
+
+
+def debug_log_file() -> Path:
+    return Path.home() / "Library/Logs/Docky/docky-debug.log"
+
+
 @app.command()
 def deploy(
     config: str = typer.Option("Debug", help="Which local build to install."),
@@ -199,6 +219,55 @@ def deploy(
             return
         time.sleep(0.5)
     raise typer.Exit("Docky did not relaunch; check Console.app.")
+
+
+@app.command()
+def logs(
+    tail: int = typer.Option(0, help="Print the last N lines instead of just the path."),
+    clear: bool = typer.Option(False, help="Clear the log file."),
+) -> None:
+    """Show the debug log file, optionally its tail."""
+    path = debug_log_file()
+    if clear:
+        if path.exists():
+            path.unlink()
+        logger.info("Cleared {}", path)
+        return
+    if tail > 0:
+        if not path.exists():
+            logger.info("No log file yet at {}", path)
+            return
+        proc = subprocess.run(["tail", f"-{tail}", str(path)],
+                              text=True, capture_output=True, check=False)
+        print(proc.stdout, end="")
+        return
+    print(path)
+
+
+@app.command()
+def restart() -> None:
+    """Quit and relaunch the installed app (no rebuild)."""
+    restart_app()
+
+
+@app.command()
+def debug(
+    enable: bool = typer.Option(True, "--enable/--disable", help="Write diagnostics to the log file."),
+) -> None:
+    """Toggle debug file logging. Takes effect immediately, no restart."""
+    run(["defaults", "write", BUNDLE_ID, "docky.debugLoggingEnabled",
+         "-bool", "YES" if enable else "NO"])
+    logger.info("Debug logging {}", "enabled" if enable else "disabled")
+
+
+@app.command()
+def overlay(
+    enable: bool = typer.Option(True, "--enable/--disable", help="Paint the technical overlay over dock tiles."),
+) -> None:
+    """Toggle the layout overlay. Restarts the app to apply."""
+    run(["defaults", "write", BUNDLE_ID, "docky.showsLayoutOverlay",
+         "-bool", "YES" if enable else "NO"])
+    restart_app()
 
 
 @app.command()

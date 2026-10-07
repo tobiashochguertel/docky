@@ -33,6 +33,12 @@ stays put between releases.
 ### Internal
 
 - `scripts/docky.py` (PEP 723) plus `mise.toml` tasks (`docky:build`,
-  `docky:build-release`, `docky:deploy`, `docky:redeploy`,
+  `docky:build-release`, `docky:deploy`, `docky:redeploy`, `docky:restart`,
   `docky:updates-on`) for local builds with a stable Developer ID
   identity, so macOS permissions survive rebuilds.
+- Debug tooling: `DockyDebugService` writes diagnostics to
+  `~/Library/Logs/Docky/docky-debug.log` (toggle live from
+  Settings → Support → Debug or `docky.py debug`), per-tile geometry
+  is logged on layout changes, and a technical overlay paints frame
+  size, paddings, and label text over every tile (`docky.py overlay`
+  or the same Settings pane).
