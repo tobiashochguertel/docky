@@ -26,10 +26,6 @@ run = "uv run --script scripts/docky.py logs --tail 50"
 description = "Print the latest machine-readable layout snapshot as JSON"
 run = "uv run --script scripts/docky.py layout"
 
-[tasks."docky:preview"]
-description = "Open an HTML replica of the dock bar with alignment guides"
-run = "uv run --script scripts/docky_preview.py"
-
 [tasks."docky:debug-on"]
 description = "Enable debug file logging (takes effect immediately)"
 run = "uv run --script scripts/docky.py debug --enable"

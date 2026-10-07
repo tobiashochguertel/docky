@@ -44,4 +44,6 @@ stays put between releases.
   baseline guide over every tile, toggleable live or via a global
   shortcut (default ⌘⌥D, `docky.py overlay`). The layout is also
   snapshotted as machine-readable JSON (`docky-layout.json` next to
-  the log, `docky.py layout`) for scripted inspection.
+  the log, `docky.py layout`) for scripted inspection, consumed live
+  by the standalone docky-inspector project (Bun + TypeScript browser
+  UI with guides, history, and diffs).
