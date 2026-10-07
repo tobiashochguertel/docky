@@ -730,7 +730,7 @@ struct TileView: View {
         switch tile.content {
         case .app(let app) where app.displayedWidget != nil:
             GeometryReader { proxy in
-                displayedContent
+                labeledContent
                     .frame(
                         width: max(0, proxy.size.width - contentInsets.width * 2),
                         height: max(0, proxy.size.height - contentInsets.height * 2)
@@ -739,7 +739,7 @@ struct TileView: View {
             }
         case .appFolder, .launchpad, .startMenu, .widget, .smartStack:
             GeometryReader { proxy in
-                displayedContent
+                labeledContent
                     .frame(
                         width: max(0, proxy.size.width - contentInsets.width * 2),
                         height: max(0, proxy.size.height - contentInsets.height * 2)
@@ -747,11 +747,11 @@ struct TileView: View {
                     .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
             }
         case .folder, .trash:
-            displayedContent
+            labeledContent
                 .padding(contentPaddingEdges, contentPadding)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         case .app, .minimizedWindow, .spacer, .flexibleSpacer, .divider:
-            displayedContent
+            labeledContent
                 .background(appFolderDropTargetBackdrop)
                 .padding(contentPaddingEdges, contentPadding)
                 .animation(.bouncy(duration: 0.4, extraBounce: 0.05), value: showsAppFolderDropBackdrop)
@@ -760,6 +760,58 @@ struct TileView: View {
 
     private var displayedContent: some View {
         content
+    }
+
+    /// Persistent iOS-style name label for this tile, or `nil` when the
+    /// surface's toggle is off. Dock tiles (apps, Launchpad, Start Menu,
+    /// folders, Trash, minimized windows) follow `showsDockTileLabels`;
+    /// app-folder tiles follow `showsAppFolderLabels` so folders can be
+    /// labeled while the rest of the dock stays icon-only.
+    private var dockLabelText: String? {
+        switch tile.content {
+        case .app(let app):
+            guard app.displayedWidget == nil,
+                  preferences.showsDockTileLabels,
+                  !app.displayName.isEmpty
+            else { return nil }
+            return app.displayName
+        case .appFolder(let folder):
+            guard preferences.showsAppFolderLabels,
+                  !folder.displayName.isEmpty
+            else { return nil }
+            return folder.displayName
+        case .launchpad(let launchpad):
+            guard preferences.showsDockTileLabels else { return nil }
+            return launchpad.title
+        case .startMenu(let menu):
+            guard preferences.showsDockTileLabels else { return nil }
+            return menu.title
+        case .folder(let folder):
+            guard preferences.showsDockTileLabels else { return nil }
+            return folder.displayName
+        case .minimizedWindow(let window):
+            guard preferences.showsDockTileLabels,
+                  !window.windowTitle.isEmpty
+            else { return nil }
+            return window.windowTitle
+        case .trash:
+            guard preferences.showsDockTileLabels else { return nil }
+            return String(localized: "Trash")
+        case .widget, .smartStack, .spacer, .flexibleSpacer, .divider:
+            return nil
+        }
+    }
+
+    /// `displayedContent` wrapped in the shared label container. The icon
+    /// shrinks to make room — the tile frame (and therefore the dock
+    /// window sizing math in `TileContainerView`) is untouched.
+    private var labeledContent: some View {
+        TileLabeledContent(
+            label: dockLabelText,
+            placement: preferences.tileLabelPlacement
+        ) {
+            displayedContent
+        }
     }
 
     @ViewBuilder

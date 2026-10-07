@@ -449,6 +449,12 @@ struct AppFolderPopoverView: View {
         .onChange(of: tile.apps.count) { _ in
             onPopoverSizeChange(popoverSize)
         }
+        .onChange(of: preferences.showsAppFolderLabels) { _ in
+            onPopoverSizeChange(popoverSize)
+        }
+        .onChange(of: preferences.tileLabelPlacement) { _ in
+            onPopoverSizeChange(popoverSize)
+        }
         .onChange(of: isPresented) { presented in
             // Reset reorder mode when the popover closes so re-opening
             // always starts in the standard launch-on-tap state.
@@ -483,8 +489,24 @@ struct AppFolderPopoverView: View {
             WorkspaceService.shared.activateOrOpen(bundleIdentifier: app.bundleIdentifier)
             isPresented = false
         } label: {
-            iconImage(for: app)
-                .opacity(isBeingDragged ? 0 : (isReorderMode ? 0.85 : 1))
+            VStack(spacing: TileLabelMetrics.spacing) {
+                // The grid column is a fixed 96pt wide, so sideways
+                // placements would overflow into neighbors — pin the
+                // popover label above/below the icon and let the shared
+                // picker drive the dock tiles instead.
+                if preferences.showsAppFolderLabels,
+                   preferences.tileLabelPlacement == .above {
+                    TileLabelView(text: app.displayName)
+                        .frame(width: Self.itemWidth)
+                }
+                iconImage(for: app)
+                if preferences.showsAppFolderLabels,
+                   preferences.tileLabelPlacement != .above {
+                    TileLabelView(text: app.displayName)
+                        .frame(width: Self.itemWidth)
+                }
+            }
+            .opacity(isBeingDragged ? 0 : (isReorderMode ? 0.85 : 1))
         }
         .buttonStyle(.plain)
         .background {
@@ -706,7 +728,9 @@ struct AppFolderPopoverView: View {
     static func popoverSize(forAppCount appCount: Int) -> CGSize {
         let rows = max(Int(ceil(Double(appCount) / Double(columns))), 1)
         let width = CGFloat(columns) * itemWidth + CGFloat(columns - 1) * itemSpacing + contentPadding * 2
-        let gridHeight = CGFloat(rows) * itemHeight + CGFloat(max(rows - 1, 0)) * itemSpacing
+        // Labeled cells stack the 96pt icon plus the shared name label.
+        let effectiveItemHeight = itemHeight + (DockyPreferences.shared.showsAppFolderLabels ? TileLabelMetrics.popoverLabelHeight : 0)
+        let gridHeight = CGFloat(rows) * effectiveItemHeight + CGFloat(max(rows - 1, 0)) * itemSpacing
         let height = min(gridHeight + contentPadding * 2 + headerHeight + 16, maxHeight)
         return CGSize(width: width, height: height)
     }

@@ -1726,6 +1726,36 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Whether dock tiles paint an iOS-style name label under (or around)
+    /// their icon. Off by default so the dock stays icon-only unless the
+    /// user opts in via Appearance > Tile Layout.
+    var showsDockTileLabels: Bool {
+        didSet {
+            guard showsDockTileLabels != oldValue else { return }
+            defaults.set(showsDockTileLabels, forKey: Keys.showsDockTileLabels)
+        }
+    }
+
+    /// Whether app-folder surfaces paint name labels: the folder's own
+    /// name under its dock tile plus each app's name inside the opened
+    /// folder popover. Independent of `showsDockTileLabels` so folders
+    /// can be labeled while the rest of the dock stays icon-only.
+    var showsAppFolderLabels: Bool {
+        didSet {
+            guard showsAppFolderLabels != oldValue else { return }
+            defaults.set(showsAppFolderLabels, forKey: Keys.showsAppFolderLabels)
+        }
+    }
+
+    /// Where the name label sits relative to its icon. One shared setting
+    /// drives both the dock and app-folder surfaces (see `TileLabelView`).
+    var tileLabelPlacement: TileLabelPlacement {
+        didSet {
+            guard tileLabelPlacement != oldValue else { return }
+            defaults.set(tileLabelPlacement.rawValue, forKey: Keys.tileLabelPlacement)
+        }
+    }
+
     /// Whether `docky://install-widget` links may install a widget. Off by
     /// default so a web page can't drive a native-code install unprompted.
     var allowsWidgetLinkInstalls: Bool {
@@ -3568,6 +3598,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let autohidesWindow = "docky.autohidesWindow"
         static let showsAppBadges = "docky.showsAppBadges"
         static let dimsIdleAppIcons = "docky.dimsIdleAppIcons"
+        static let showsDockTileLabels = "docky.showsDockTileLabels"
+        static let showsAppFolderLabels = "docky.showsAppFolderLabels"
+        static let tileLabelPlacement = "docky.tileLabelPlacement"
         static let allowsWidgetLinkInstalls = "docky.allowsWidgetLinkInstalls"
         static let folderBadgeMode = "docky.folderBadgeMode"
         static let folderBadgePreviewStyle = "docky.folderBadgePreviewStyle"
@@ -3679,6 +3712,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let autohidesWindow = false
         static let showsAppBadges = true
         static let dimsIdleAppIcons = false
+        static let showsDockTileLabels = false
+        static let showsAppFolderLabels = false
+        static let tileLabelPlacement: TileLabelPlacement = .below
         static let allowsWidgetLinkInstalls = false
         static let folderBadgeMode: FolderBadgeMode = .combined
         static let folderBadgePreviewStyle: FolderBadgePreviewStyle = .dot
@@ -3813,6 +3849,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         let storedAutohidesWindow = defaults.object(forKey: Keys.autohidesWindow) as? Bool
         let storedShowsAppBadges = defaults.object(forKey: Keys.showsAppBadges) as? Bool
         let storedDimsIdleAppIcons = defaults.object(forKey: Keys.dimsIdleAppIcons) as? Bool
+        let storedShowsDockTileLabels = defaults.object(forKey: Keys.showsDockTileLabels) as? Bool
+        let storedShowsAppFolderLabels = defaults.object(forKey: Keys.showsAppFolderLabels) as? Bool
+        let storedTileLabelPlacement = defaults.string(forKey: Keys.tileLabelPlacement)
         let storedAllowsWidgetLinkInstalls = defaults.object(forKey: Keys.allowsWidgetLinkInstalls) as? Bool
         let storedFolderBadgeMode = defaults.string(forKey: Keys.folderBadgeMode)
         let storedFolderBadgePreviewStyle = defaults.string(forKey: Keys.folderBadgePreviewStyle)
@@ -3941,6 +3980,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         self.autohidesWindow = storedAutohidesWindow ?? DefaultValues.autohidesWindow
         self.showsAppBadges = storedShowsAppBadges ?? DefaultValues.showsAppBadges
         self.dimsIdleAppIcons = storedDimsIdleAppIcons ?? DefaultValues.dimsIdleAppIcons
+        self.showsDockTileLabels = storedShowsDockTileLabels ?? DefaultValues.showsDockTileLabels
+        self.showsAppFolderLabels = storedShowsAppFolderLabels ?? DefaultValues.showsAppFolderLabels
+        self.tileLabelPlacement = storedTileLabelPlacement.flatMap(TileLabelPlacement.init(rawValue:)) ?? DefaultValues.tileLabelPlacement
         self.allowsWidgetLinkInstalls = storedAllowsWidgetLinkInstalls ?? DefaultValues.allowsWidgetLinkInstalls
         self.folderBadgeMode = storedFolderBadgeMode
             .flatMap(FolderBadgeMode.init(rawValue:))
@@ -4138,6 +4180,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         tileVerticalPadding = DefaultValues.tileVerticalPadding
         tileSpacing = DefaultValues.tileSpacing
         tileIconPadding = DefaultValues.tileIconPadding
+        showsDockTileLabels = DefaultValues.showsDockTileLabels
+        showsAppFolderLabels = DefaultValues.showsAppFolderLabels
+        tileLabelPlacement = DefaultValues.tileLabelPlacement
 
         // Tile Hover Effect
         tileHoverOpacity = nil
@@ -4276,6 +4321,9 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         autohidesWindow = DefaultValues.autohidesWindow
         showsAppBadges = DefaultValues.showsAppBadges
         dimsIdleAppIcons = DefaultValues.dimsIdleAppIcons
+        showsDockTileLabels = DefaultValues.showsDockTileLabels
+        showsAppFolderLabels = DefaultValues.showsAppFolderLabels
+        tileLabelPlacement = DefaultValues.tileLabelPlacement
         folderBadgeMode = DefaultValues.folderBadgeMode
         folderBadgePreviewStyle = DefaultValues.folderBadgePreviewStyle
         opensAtLogin = DefaultValues.opensAtLogin

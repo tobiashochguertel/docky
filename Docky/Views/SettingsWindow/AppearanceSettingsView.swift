@@ -447,6 +447,35 @@ struct AppearanceSettingsView: View {
             .padding(.vertical, 4)
 
             VStack(alignment: .leading, spacing: 8) {
+                Text("Tile Labels")
+                    .font(.headline)
+
+                Toggle("Show Labels in Dock", isOn: $preferences.showsDockTileLabels)
+
+                Toggle("Show Labels in App Folders", isOn: $preferences.showsAppFolderLabels)
+
+                HStack {
+                    Text("Label Position")
+
+                    Spacer()
+
+                    Picker("Label Position", selection: $preferences.tileLabelPlacement) {
+                        ForEach(TileLabelPlacement.allCases) { placement in
+                            Text(placement.title).tag(placement)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                }
+                .disabled(!preferences.showsDockTileLabels && !preferences.showsAppFolderLabels)
+
+                Text("Paints the app name next to its icon, like iOS. The dock toggle covers app tiles plus Launchpad, Start Menu, folders, Trash, and minimized windows; the folder toggle covers the folder's own dock tile and the apps inside opened folders. Both are off by default.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, 4)
+
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Tile Hover Effect")
                     .font(.headline)
 
