@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import shutil
 import subprocess
 import time
 from pathlib import Path
@@ -138,8 +139,12 @@ def sign_app(app_path: Path, identity: str) -> None:
 def build(
     config: str = typer.Option("Debug", help="Xcode build configuration."),
     identity: str = typer.Option(DEFAULT_IDENTITY, help="Codesigning identity for the re-sign step."),
+    clean: bool = typer.Option(False, help="Wipe DerivedData first (fixes stale incremental builds)."),
 ) -> None:
     """Build Docky and re-sign the bundle with the stable identity."""
+    if clean and BUILD_DIR.exists():
+        logger.info("Removing {}", BUILD_DIR)
+        shutil.rmtree(BUILD_DIR)
     run([
         "xcodebuild", "build",
         "-project", str(PROJECT), "-scheme", SCHEME, "-configuration", config,
@@ -305,9 +310,10 @@ def overlay(
 def redeploy(
     config: str = typer.Option("Debug", help="Xcode build configuration."),
     identity: str = typer.Option(DEFAULT_IDENTITY, help="Codesigning identity."),
+    clean: bool = typer.Option(False, help="Wipe DerivedData first (fixes stale incremental builds)."),
 ) -> None:
     """Build, sign, and deploy in one step."""
-    build(config=config, identity=identity)
+    build(config=config, identity=identity, clean=clean)
     deploy(config=config, identity=identity)
 
 

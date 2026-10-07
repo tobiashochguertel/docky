@@ -1184,13 +1184,15 @@ struct TileContainerView: View {
             case .trash: "trash"
             }
             let label = TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "-"
+            let center = restAxisCenter(forTileID: tile.id) ?? 0
             signature += "|\(tile.id)=\(Int(size.width))x\(Int(size.height))"
-            lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) label=\(label)")
+            lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) c=\(Int(center)) label=\(label)")
             snapshotTiles.append([
                 "id": tile.id,
                 "kind": kind,
                 "w": Int(size.width),
                 "h": Int(size.height),
+                "c": Int(center),
                 "label": TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "",
             ])
         }
