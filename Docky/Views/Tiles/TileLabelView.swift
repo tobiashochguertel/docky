@@ -47,6 +47,10 @@ struct TileLabelView: View {
             .foregroundStyle(labelColor)
             .shadow(color: .black.opacity(0.35), radius: 1, x: 0, y: 1)
             .frame(maxWidth: .infinity)
+            .overlay(
+                baselineGuide,
+                alignment: Alignment(horizontal: .center, vertical: .firstTextBaseline)
+            )
             .accessibilityLabel(text)
     }
 
@@ -55,6 +59,16 @@ struct TileLabelView: View {
             return .primary
         }
         return Color(nsColor: dockColor.nsColor)
+    }
+
+    /// Yellow text-baseline guide, only while the layout overlay is on.
+    @ViewBuilder
+    private var baselineGuide: some View {
+        if preferences.showsLayoutOverlay {
+            Rectangle()
+                .fill(Color.yellow)
+                .frame(height: 1)
+        }
     }
 }
 
@@ -122,14 +136,18 @@ struct TileLabeledContent<Content: View>: View {
             case .below:
                 VStack(spacing: TileLabelMetrics.spacing) {
                     content
+                        .border(debugColor(.green))
                     TileLabelView(text: label)
                         .frame(height: labelHeight, alignment: .top)
+                        .border(debugColor(.yellow))
                 }
             case .above:
                 VStack(spacing: TileLabelMetrics.spacing) {
                     TileLabelView(text: label)
                         .frame(height: labelHeight, alignment: .bottom)
+                        .border(debugColor(.yellow))
                     content
+                        .border(debugColor(.green))
                 }
             case .leading, .trailing:
                 GeometryReader { proxy in
@@ -137,15 +155,18 @@ struct TileLabeledContent<Content: View>: View {
                         if placement == .leading {
                             TileLabelView(text: label)
                                 .frame(width: sidewaysSlot)
+                                .border(debugColor(.yellow))
                         }
                         content
                             .frame(
                                 width: max(0, proxy.size.width - sidewaysSlot - TileLabelMetrics.spacing),
                                 height: proxy.size.height
                             )
+                            .border(debugColor(.green))
                         if placement == .trailing {
                             TileLabelView(text: label)
                                 .frame(width: sidewaysSlot)
+                                .border(debugColor(.yellow))
                         }
                     }
                 }
@@ -184,6 +205,12 @@ struct TileLabeledContent<Content: View>: View {
             text: label ?? "",
             fontSize: preferences.tileLabelFontSize
         )
+    }
+
+    /// Debug outline color, or clear when the overlay is off so the
+    /// modifier stays a visual no-op without branching view types.
+    private func debugColor(_ color: Color) -> Color {
+        preferences.showsLayoutOverlay ? color : .clear
     }
 }
 

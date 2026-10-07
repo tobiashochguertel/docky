@@ -522,7 +522,7 @@ struct TileView: View {
     @ViewBuilder
     private var layoutDebugReadout: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text("\(Int(globalTileFrame.size.width))×\(Int(globalTileFrame.size.height))")
+            Text("\(shortTileID) \(Int(globalTileFrame.size.width))×\(Int(globalTileFrame.size.height))")
             Text("vPad \(Int(layout.scaled(preferences.effectiveTileVerticalPadding))) iPad \(Int(layout.scaled(preferences.effectiveTileIconPadding)))")
             Text("label \(dockLabelText ?? "–")")
         }
@@ -531,6 +531,11 @@ struct TileView: View {
         .padding(3)
         .background(Color.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 3))
         .allowsHitTesting(false)
+    }
+
+    private var shortTileID: String {
+        let base = tile.id.split(separator: ":").last.map(String.init) ?? tile.id
+        return base.count > 18 ? String(base.prefix(18)) + "…" : base
     }
 
     /// Effective drop shadow applied behind the tile's icon content.
@@ -586,7 +591,7 @@ struct TileView: View {
                     layoutDebugReadout
                 }
             }
-            .border(preferences.showsLayoutOverlay ? Color.cyan : Color.clear)
+            .border(preferences.showsLayoutOverlay ? Color.blue : Color.clear)
             .contentShape(Rectangle())
             .onHover(perform: updateHoverState)
             .onTapGesture(perform: handleTap)

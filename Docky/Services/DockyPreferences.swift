@@ -1756,6 +1756,15 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// Global shortcut that toggles the debug layout overlay. Debug
+    /// switch, intentionally left out of every reset method.
+    var debugOverlayShortcut: KeyboardShortcut {
+        didSet {
+            guard debugOverlayShortcut != oldValue else { return }
+            persistDebugOverlayShortcut(debugOverlayShortcut)
+        }
+    }
+
     /// Point size of the tile name labels. Applies to both the dock and
     /// app-folder surfaces.
     var tileLabelFontSize: CGFloat {
@@ -3632,6 +3641,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let tileLabelFontSize = "docky.tileLabelFontSize"
         static let tileLabelColor = "docky.tileLabelColor"
         static let showsLayoutOverlay = "docky.showsLayoutOverlay"
+        static let debugOverlayShortcut = "docky.debugOverlayShortcut"
         static let allowsWidgetLinkInstalls = "docky.allowsWidgetLinkInstalls"
         static let folderBadgeMode = "docky.folderBadgeMode"
         static let folderBadgePreviewStyle = "docky.folderBadgePreviewStyle"
@@ -3749,6 +3759,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         static let tileLabelFontSize: CGFloat = 11
         static let tileLabelColor: DockColor? = nil
         static let showsLayoutOverlay = false
+        static let debugOverlayShortcut = KeyboardShortcut(keyCode: 2, modifierFlags: [.command, .option])
         static let allowsWidgetLinkInstalls = false
         static let folderBadgeMode: FolderBadgeMode = .combined
         static let folderBadgePreviewStyle: FolderBadgePreviewStyle = .dot
@@ -3956,6 +3967,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         let storedLaunchpadLayoutAxis = defaults.string(forKey: Keys.launchpadLayoutAxis)
         let storedLaunchpadSortMode = defaults.string(forKey: Keys.launchpadSortMode)
         let storedLaunchpadShortcut = defaults.data(forKey: Keys.launchpadShortcut)
+        let storedDebugOverlayShortcut = defaults.data(forKey: Keys.debugOverlayShortcut)
         let storedEnablesWindowSwitcher = defaults.object(forKey: Keys.enablesWindowSwitcher) as? Bool
         let storedIncludesMinimizedWindows = defaults.object(forKey: Keys.includesMinimizedWindows) as? Bool
         let storedWindowSwitcherShortcut = defaults.data(forKey: Keys.windowSwitcherShortcut)
@@ -4119,6 +4131,7 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
             .flatMap(LaunchpadSortMode.init(rawValue:))
             ?? DefaultValues.launchpadSortMode
         self.launchpadShortcut = Self.decodeKeyboardShortcut(from: storedLaunchpadShortcut) ?? DefaultValues.launchpadShortcut
+        self.debugOverlayShortcut = Self.decodeKeyboardShortcut(from: storedDebugOverlayShortcut) ?? DefaultValues.debugOverlayShortcut
         self.enablesWindowSwitcher = storedEnablesWindowSwitcher ?? DefaultValues.enablesWindowSwitcher
         self.includesMinimizedWindows = storedIncludesMinimizedWindows ?? DefaultValues.includesMinimizedWindows
         self.windowSwitcherShortcut = Self.decodeKeyboardShortcut(from: storedWindowSwitcherShortcut) ?? DefaultValues.windowSwitcherShortcut
@@ -4588,6 +4601,15 @@ enum LaunchpadSortMode: String, CaseIterable, Codable, Identifiable {
         }
 
         defaults.set(data, forKey: Keys.launchpadShortcut)
+    }
+
+    private func persistDebugOverlayShortcut(_ shortcut: KeyboardShortcut) {
+        guard let data = try? encoder.encode(shortcut) else {
+            defaults.removeObject(forKey: Keys.debugOverlayShortcut)
+            return
+        }
+
+        defaults.set(data, forKey: Keys.debugOverlayShortcut)
     }
 
     private static func decodeColor(from data: Data?) -> DockColor? {

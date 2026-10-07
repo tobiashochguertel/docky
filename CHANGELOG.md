@@ -39,8 +39,9 @@ stays put between releases.
 - Debug tooling: `DockyDebugService` writes diagnostics to
   `~/Library/Logs/Docky/docky-debug.log` (toggle live from
   Settings → Support → Debug or `docky.py debug`), per-tile geometry
-  is logged on layout changes, and a technical overlay paints frame
-  size, paddings, and label text over every tile (`docky.py overlay`
-  or the same Settings pane). The layout is also snapshotted as
-  machine-readable JSON (`docky-layout.json` next to the log,
-  `docky.py layout`) for scripted inspection.
+  is logged on layout changes, and a technical X-ray overlay paints
+  blue tile frames, green icon bounds, and yellow label bounds with a
+  baseline guide over every tile, toggleable live or via a global
+  shortcut (default ⌘⌥D, `docky.py overlay`). The layout is also
+  snapshotted as machine-readable JSON (`docky-layout.json` next to
+  the log, `docky.py layout`) for scripted inspection.

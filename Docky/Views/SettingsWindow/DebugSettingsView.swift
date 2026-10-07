@@ -8,6 +8,7 @@ import SwiftUI
 struct DebugSettingsView: View {
     @Bindable private var preferences = DockyPreferences.shared
     @State private var loggingEnabled = DockyDebugLogging.isEnabled
+    @State private var isRecordingShortcut = false
 
     var body: some View {
         Form {
@@ -41,7 +42,19 @@ struct DebugSettingsView: View {
                     Toggle("Show Technical Overlay", isOn: $preferences.showsLayoutOverlay)
                         .font(.headline)
 
-                    Text("Paints a cyan frame plus a readout (rendered size, vertical and icon padding, resolved label) over every dock tile. Updates live.")
+                    Text("Paints a blue tile frame, green icon bounds, and yellow label bounds with a baseline guide over every dock tile, plus a metric readout. Updates live.")
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    ShortcutRecorderControl(
+                        shortcut: preferences.debugOverlayShortcut,
+                        isRecording: $isRecordingShortcut,
+                        resetShortcut: KeyboardShortcut(keyCode: 2, modifierFlags: [.command, .option])
+                    ) { shortcut in
+                        preferences.debugOverlayShortcut = shortcut
+                    }
+
+                    Text("Global shortcut that toggles the overlay from anywhere, even while Docky's panel never holds keyboard focus. Clear it to disable the hotkey.")
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
