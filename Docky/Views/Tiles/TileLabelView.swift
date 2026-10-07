@@ -122,11 +122,21 @@ struct TileLabeledContent<Content: View>: View {
     let label: String?
     let placement: TileLabelPlacement
     let content: Content
+    /// Tile id for debug geometry recording. When set (and debug
+    /// logging is on), the measured icon/label sizes are reported to
+    /// `TileGeometryService` so the inspector shows real frames.
+    let geometryID: String?
     @Bindable private var preferences = DockyPreferences.shared
 
-    init(label: String?, placement: TileLabelPlacement, @ViewBuilder content: () -> Content) {
+    init(
+        label: String?,
+        placement: TileLabelPlacement,
+        geometryID: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.label = label
         self.placement = placement
+        self.geometryID = geometryID
         self.content = content()
     }
 
@@ -136,38 +146,50 @@ struct TileLabeledContent<Content: View>: View {
             switch placement {
             case .below:
                 VStack(spacing: TileLabelMetrics.spacing) {
-                    content
+                    measured(content, as: .icon)
                         .border(debugColor(.green))
-                    TileLabelView(text: label)
-                        .frame(height: labelHeight, alignment: .top)
-                        .border(debugColor(.yellow))
+                    measured(
+                        TileLabelView(text: label)
+                            .frame(height: labelHeight, alignment: .top),
+                        as: .label
+                    )
+                    .border(debugColor(.yellow))
                 }
             case .above:
                 VStack(spacing: TileLabelMetrics.spacing) {
-                    TileLabelView(text: label)
-                        .frame(height: labelHeight, alignment: .bottom)
-                        .border(debugColor(.yellow))
-                    content
+                    measured(
+                        TileLabelView(text: label)
+                            .frame(height: labelHeight, alignment: .bottom),
+                        as: .label
+                    )
+                    .border(debugColor(.yellow))
+                    measured(content, as: .icon)
                         .border(debugColor(.green))
                 }
             case .leading, .trailing:
                 GeometryReader { proxy in
                     HStack(spacing: TileLabelMetrics.spacing) {
                         if placement == .leading {
-                            TileLabelView(text: label)
-                                .frame(width: sidewaysSlot)
-                                .border(debugColor(.yellow))
+                            measured(
+                                TileLabelView(text: label)
+                                    .frame(width: sidewaysSlot),
+                                as: .label
+                            )
+                            .border(debugColor(.yellow))
                         }
-                        content
+                        measured(content, as: .icon)
                             .frame(
                                 width: max(0, proxy.size.width - sidewaysSlot - TileLabelMetrics.spacing),
                                 height: proxy.size.height
                             )
                             .border(debugColor(.green))
                         if placement == .trailing {
-                            TileLabelView(text: label)
-                                .frame(width: sidewaysSlot)
-                                .border(debugColor(.yellow))
+                            measured(
+                                TileLabelView(text: label)
+                                    .frame(width: sidewaysSlot),
+                                as: .label
+                            )
+                            .border(debugColor(.yellow))
                         }
                     }
                 }
@@ -206,6 +228,30 @@ struct TileLabeledContent<Content: View>: View {
             text: label ?? "",
             fontSize: preferences.tileLabelFontSize
         )
+    }
+
+    /// Records the final laid-out size for debug inspection. Passthrough
+    /// when no geometry id is set (e.g. popover labels).
+    private enum MeasuredKind {
+        case icon, label
+    }
+
+    @ViewBuilder
+    private func measured<V: View>(_ view: V, as kind: MeasuredKind) -> some View {
+        if let geometryID {
+            view.onGeometryChange(for: CGSize.self) { proxy in
+                proxy.size
+            } action: { size in
+                switch kind {
+                case .icon:
+                    TileGeometryService.shared.recordIcon(id: geometryID, size: size)
+                case .label:
+                    TileGeometryService.shared.recordLabel(id: geometryID, size: size)
+                }
+            }
+        } else {
+            view
+        }
     }
 
     /// Debug outline color, or clear when the overlay is off so the

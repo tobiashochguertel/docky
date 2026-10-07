@@ -3,6 +3,7 @@
 //  Docky
 //
 
+import Combine
 import SwiftUI
 import UniformTypeIdentifiers
 import OSLog
@@ -21,6 +22,10 @@ struct TileContainerView: View {
     private let magnification = DockMagnificationService.shared
 
     @State private var draggedTileID: String?
+    /// Bumped by geometry arrivals so the layout report re-fires with
+    /// measured sub-frames. Only moves while debug logging is on (the
+    /// service posts solely in that case).
+    @State private var geometryTick = 0
     @State private var draggedTileOffset: CGFloat = 0
     @State private var draggedTileInitialFrame: CGRect?
     @State private var draggedPinnedTileDestinationIndex: Int?
@@ -62,6 +67,9 @@ struct TileContainerView: View {
                 }
             }
             .animation(tileMutationAnimation, value: displayTiles)
+            .onReceive(NotificationCenter.default.publisher(for: .tileGeometryUpdated)) { _ in
+                geometryTick += 1
+            }
         }
     }
 
@@ -1186,6 +1194,12 @@ struct TileContainerView: View {
             let label = TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "-"
             let center = restAxisCenter(forTileID: tile.id) ?? 0
             signature += "|\(tile.id)=\(Int(size.width))x\(Int(size.height))"
+            // Measurement coverage invalidates the report: geometry
+            // callbacks arrive after first layout, so the report re-fires
+            // once real sub-frames are in.
+            if TileGeometryService.shared.frames(for: tile.id) != nil {
+                signature += "*"
+            }
             lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) c=\(Int(center)) label=\(label)")
             var entry: [String: Any] = [
                 "id": tile.id,
@@ -1195,8 +1209,16 @@ struct TileContainerView: View {
                 "c": Int(center),
                 "label": TileLabelResolver.dockText(for: tile, preferences: preferences) ?? "",
             ]
-            // Contained apps (folder mosaic) and owning app (minimized
-            // tile) so the inspector can resolve their real icons.
+            // Measured icon/label sub-frames (present once rendered with
+            // debug logging on). Rounded to 1 decimal for stable JSON.
+            if let sub = TileGeometryService.shared.frames(for: tile.id) {
+                if let icon = sub.icon {
+                    entry["iconM"] = [(icon.width * 10).rounded() / 10, (icon.height * 10).rounded() / 10]
+                }
+                if let label = sub.label {
+                    entry["labelM"] = [(label.width * 10).rounded() / 10, (label.height * 10).rounded() / 10]
+                }
+            }
             switch tile.content {
             case .appFolder(let folder):
                 entry["apps"] = Array(folder.apps.prefix(4).map(\.bundleIdentifier))
@@ -1226,6 +1248,7 @@ struct TileContainerView: View {
             else { return "{}" }
             return json
         }()
+        TileGeometryService.shared.prune(keeping: Set(tiles.map(\.id)))
         DockyDebugService.shared.logLayoutIfChanged(signature: signature, report: {
             "dock layout (\(tiles.count) tiles):\n" + lines.joined(separator: "\n")
         }, snapshotJSON: { snapshotJSON })

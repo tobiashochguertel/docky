@@ -808,7 +808,8 @@ struct TileView: View {
     private var labeledContent: some View {
         TileLabeledContent(
             label: dockLabelText,
-            placement: preferences.tileLabelPlacement
+            placement: preferences.tileLabelPlacement,
+            geometryID: tile.id
         ) {
             displayedContent
         }
