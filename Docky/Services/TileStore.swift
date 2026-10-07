@@ -1757,6 +1757,9 @@ final class TileStore: ObservableObject {
     }
 
     private func seedPinnedPreferencesIfNeeded(from refreshed: [Tile]) {
+        guard !hasImportedSystemDockPreferences else {
+            return
+        }
         guard preferences.pinnedItems.isEmpty else {
             return
         }
@@ -1788,8 +1791,18 @@ final class TileStore: ObservableObject {
         }
 
         let existingItems = preferences.pinnedItems
+        // Apps grouped inside an appFolder count as present — merging them
+        // as individual tiles would duplicate them in the dock.
+        let folderBundleIdentifiers = Set(existingItems.flatMap { item in
+            item.kind == .appFolder ? item.folderBundleIdentifiers : []
+        })
         let additions = importedItems.filter { importedItem in
-            !existingItems.contains { existingItem in
+            if importedItem.kind == .app,
+               let bundleIdentifier = importedItem.bundleIdentifier,
+               folderBundleIdentifiers.contains(bundleIdentifier) {
+                return false
+            }
+            return !existingItems.contains { existingItem in
                 Self.matchesImportedPinnedItem(existingItem, importedItem)
             }
         }
@@ -1827,6 +1840,9 @@ final class TileStore: ObservableObject {
         }
 
         guard !preferences.trailingItems.isEmpty else {
+            // After the initial import, an empty trailing section is an
+            // intentional user/profile state — don't reseed it.
+            guard !hasImportedSystemDockPreferences else { return }
             preferences.trailingItems = systemItems
             logTrailingItems("After refreshTrailingPreferencesIfNeeded seeded")
             return
