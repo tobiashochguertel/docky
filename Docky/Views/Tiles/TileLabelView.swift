@@ -47,6 +47,7 @@ struct TileLabelView: View {
             .foregroundStyle(labelColor)
             .shadow(color: .black.opacity(0.35), radius: 1, x: 0, y: 1)
             .frame(maxWidth: .infinity)
+            .padding(.horizontal, TileLabelMetrics.labelSideInset)
             .overlay(
                 baselineGuide,
                 alignment: Alignment(horizontal: .center, vertical: .firstTextBaseline)
@@ -217,6 +218,14 @@ struct TileLabeledContent<Content: View>: View {
 enum TileLabelMetrics {
     /// Gap between the icon and its label.
     static let spacing: CGFloat = 2
+    /// Horizontal inset inside the label frame so neighboring labels
+    /// never touch, even at zero tile spacing. The text truncates a
+    /// little earlier in exchange for a guaranteed gap.
+    static let labelSideInset: CGFloat = 2
+    /// Optical margin around the app-folder tile visual, as a fraction
+    /// of the tile's smaller side. Folder backgrounds otherwise bleed to
+    /// the tile edge while app icons carry natural transparent margins.
+    static let folderChromeMarginFraction: CGFloat = 0.06
 
     /// Height of the label text itself for a given point size.
     static func labelHeight(fontSize: CGFloat) -> CGFloat {

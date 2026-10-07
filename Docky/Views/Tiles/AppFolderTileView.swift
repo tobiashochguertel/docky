@@ -76,6 +76,12 @@ struct AppFolderTileView: View {
         groupedOpenedBackdropOffset + (position == .bottom ? 3 : 0)
     }
 
+    /// Optical margin so the folder visual doesn't bleed to the tile
+    /// edge while app icons carry natural transparent margins.
+    private func folderChromeMargin(in size: CGSize) -> CGFloat {
+        min(size.width, size.height) * TileLabelMetrics.folderChromeMarginFraction
+    }
+
     private func groupedOpenedBackdropCrossAxisExtent(in size: CGSize) -> CGFloat? {
         guard position.isVertical else {
             return nil
@@ -122,6 +128,7 @@ struct AppFolderTileView: View {
     private var content: some View {
         GeometryReader { geo in
             displayContent(in: geo.size)
+                .padding(folderChromeMargin(in: geo.size))
                 .background(
                     Color.primary.opacity(showsBackdrop ? 0.2 : 0)
                         .clipShape(.rect(cornerRadius: cornerRadius, style: .continuous))
