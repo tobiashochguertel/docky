@@ -16,6 +16,13 @@ stays put between releases.
   inset). The values are read from `TileLabelMetrics`,
   `TileLayoutMetrics` and the tile views themselves, so the inspector's
   "fixed vs configurable" table cannot drift from the code.
+- Layout snapshot now exports **resolved, measured frames** per tile
+  (`iconF`, `labelF`, `paintF` as `[x, y, w, h]` in tile-local points)
+  plus the empty `bands` between them (`padTop`, `padGap`, `padBottom`,
+  `insetL`, `insetR`, `labelGap`, `paintTop`, `paintL`). The inspector
+  draws these directly instead of re-deriving the layout, so a doc
+  figure cannot disagree with the running dock. `iconM`/`labelM`/`paintM`
+  (sizes only) are still emitted for existing consumers.
 - New `TileLayoutMetrics.chromeInset` names the widget-chrome inset
   (`floor(tileSize * 3/32)`) that `TileView` used to inline, and exports
   it in the snapshot. App tiles keep a zero inset; widget-chrome tiles

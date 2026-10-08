@@ -1197,7 +1197,8 @@ struct TileContainerView: View {
             // Measurement coverage invalidates the report: geometry
             // callbacks arrive after first layout, so the report re-fires
             // once real sub-frames are in.
-            if TileGeometryService.shared.frames(for: tile.id) != nil {
+            if TileGeometryService.shared.frames(for: tile.id)?.local(
+                TileGeometryService.shared.frames(for: tile.id)?.icon) != nil {
                 signature += "*"
             }
             lines.append("  \(tile.id) \(kind) \(Int(size.width))x\(Int(size.height)) c=\(Int(center)) label=\(label)")
@@ -1211,15 +1212,33 @@ struct TileContainerView: View {
             ]
             // Measured icon/label sub-frames (present once rendered with
             // debug logging on). Rounded to 1 decimal for stable JSON.
+            // Resolved frames, measured — not derived. `f` arrays are
+            // [x, y, w, h] in tile-local points, so the inspector can draw
+            // the real layout instead of re-deriving it. `bands` are the
+            // empty regions between those frames; they are whatever the
+            // layout actually produced, gaps included.
             if let sub = TileGeometryService.shared.frames(for: tile.id) {
-                if let icon = sub.icon {
-                    entry["iconM"] = [(icon.width * 10).rounded() / 10, (icon.height * 10).rounded() / 10]
+                let r10: (CGFloat) -> Double = { (($0 * 10).rounded() / 10) }
+                let arr: (CGRect) -> [Double] = { f in
+                    [r10(f.minX), r10(f.minY), r10(f.width), r10(f.height)]
                 }
-                if let label = sub.label {
-                    entry["labelM"] = [(label.width * 10).rounded() / 10, (label.height * 10).rounded() / 10]
-                }
-                if let painted = sub.painted {
-                    entry["paintM"] = [(painted.width * 10).rounded() / 10, (painted.height * 10).rounded() / 10]
+                if let icon = sub.local(sub.icon) { entry["iconF"] = arr(icon) }
+                if let label = sub.local(sub.label) { entry["labelF"] = arr(label) }
+                if let painted = sub.local(sub.painted) { entry["paintF"] = arr(painted) }
+                if let icon = sub.local(sub.icon), let label = sub.local(sub.label) {
+                    var bands: [String: Double] = [
+                        "padTop": r10(icon.minY),
+                        "padGap": r10(label.minY - icon.maxY),
+                        "padBottom": r10(size.height - label.maxY),
+                        "insetL": r10(icon.minX),
+                        "insetR": r10(size.width - icon.maxX),
+                        "labelGap": r10(label.minY - icon.maxY),
+                    ]
+                    if let painted = sub.local(sub.painted) {
+                        bands["paintTop"] = r10(painted.minY - icon.minY)
+                        bands["paintL"] = r10(painted.minX - icon.minX)
+                    }
+                    entry["bands"] = bands
                 }
             }
             switch tile.content {

@@ -239,14 +239,14 @@ struct TileLabeledContent<Content: View>: View {
     @ViewBuilder
     private func measured<V: View>(_ view: V, as kind: MeasuredKind) -> some View {
         if let geometryID {
-            view.onGeometryChange(for: CGSize.self) { proxy in
-                proxy.size
-            } action: { size in
+            view.onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
                 switch kind {
                 case .icon:
-                    TileGeometryService.shared.recordIcon(id: geometryID, size: size)
+                    TileGeometryService.shared.recordIcon(id: geometryID, frame: frame)
                 case .label:
-                    TileGeometryService.shared.recordLabel(id: geometryID, size: size)
+                    TileGeometryService.shared.recordLabel(id: geometryID, frame: frame)
                 }
             }
         } else {

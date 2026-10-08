@@ -10,10 +10,22 @@
 import CoreGraphics
 import Foundation
 
+/// Frames are recorded in global (window) coordinates and reported relative
+/// to the tile's own origin, so the inspector can draw them without
+/// re-deriving Docky's layout maths.
 struct TileSubFrames {
-    var icon: CGSize?
-    var label: CGSize?
-    var painted: CGSize?
+    var tileOrigin: CGPoint?
+    var icon: CGRect?
+    var label: CGRect?
+    var painted: CGRect?
+
+    func local(_ frame: CGRect?) -> CGRect? {
+        guard let frame, let tileOrigin else { return nil }
+        return CGRect(x: frame.origin.x - tileOrigin.x,
+                      y: frame.origin.y - tileOrigin.y,
+                      width: frame.width,
+                      height: frame.height)
+    }
 }
 
 final class TileGeometryService {
@@ -29,28 +41,36 @@ final class TileGeometryService {
         DockyDebugLogging.isEnabled
     }
 
-    func recordIcon(id: String, size: CGSize) {
+    /// Tile-local origin for every sub-frame of this tile.
+    func recordTileOrigin(id: String, frame: CGRect) {
         guard recording else { return }
         lock.withLock {
-            frames[id, default: TileSubFrames()].icon = size
+            frames[id, default: TileSubFrames()].tileOrigin = frame.origin
+        }
+    }
+
+    func recordIcon(id: String, frame: CGRect) {
+        guard recording else { return }
+        lock.withLock {
+            frames[id, default: TileSubFrames()].icon = frame
         }
         postThrottled()
     }
 
-    func recordLabel(id: String, size: CGSize) {
+    func recordLabel(id: String, frame: CGRect) {
         guard recording else { return }
         lock.withLock {
-            frames[id, default: TileSubFrames()].label = size
+            frames[id, default: TileSubFrames()].label = frame
         }
         postThrottled()
     }
 
     /// Painted visual extent inside the icon slot (folder mosaic,
     /// minimized card, raw icon image). Same gating as the rest.
-    func recordPainted(id: String, size: CGSize) {
+    func recordPainted(id: String, frame: CGRect) {
         guard recording else { return }
         lock.withLock {
-            frames[id, default: TileSubFrames()].painted = size
+            frames[id, default: TileSubFrames()].painted = frame
         }
         postThrottled()
     }

@@ -599,6 +599,7 @@ struct TileView: View {
                 proxy.frame(in: .global)
             } action: { newFrame in
                 globalTileFrame = newFrame
+                TileGeometryService.shared.recordTileOrigin(id: tile.id, frame: newFrame)
             }
             .onChange(of: isHovering) { isHovering in
                 TilePressService.shared.registerHover(tileID: tile.id, isHovering: isHovering)

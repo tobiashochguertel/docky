@@ -79,10 +79,10 @@ struct MinimizedWindowTileView: View {
     @ViewBuilder
     private func debugPaint<V: View>(_ view: V) -> some View {
         if let debugGeometryID {
-            view.onGeometryChange(for: CGSize.self) { proxy in
-                proxy.size
-            } action: { size in
-                TileGeometryService.shared.recordPainted(id: debugGeometryID, size: size)
+            view.onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, frame: frame)
             }
         } else {
             view
