@@ -9,6 +9,13 @@ stays put between releases.
 
 ### Added
 
+- Layout snapshot now exports a `metrics` block with the sizing
+  constants the inspector documents (icon↔label gap, label side inset,
+  label row height, sideways label cap, folder chrome margin, mosaic /
+  card / badge scales, indicator thickness, length and inset). The values
+  are read from `TileLabelMetrics` and the tile views themselves, so the
+  inspector's "fixed vs configurable" table cannot drift from the code.
+
 - Optional iOS-style name labels for dock tiles and app folders. Two
   independent toggles (both default off) plus a shared label position
   (Below / Above / Leading / Trailing), text size slider, and optional

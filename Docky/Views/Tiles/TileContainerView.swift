@@ -1243,6 +1243,24 @@ struct TileContainerView: View {
                 "v": Double(layout.scaled(preferences.effectiveTileVerticalPadding)),
                 "icon": Double(layout.scaled(preferences.effectiveTileIconPadding)),
             ],
+            // Sizing constants the inspector documents. Exported from the
+            // code that owns them so the doc cannot drift from reality.
+            // `fixed` are not user-configurable; the rest are preferences.
+            "metrics": [
+                "iconLabelGap": Double(TileLabelMetrics.spacing),
+                "sideInset": Double(TileLabelMetrics.labelSideInset),
+                "labelHeight": Double(TileLabelMetrics.labelHeight(fontSize: preferences.tileLabelFontSize)),
+                "labelRowHeight": Double(TileLabelMetrics.rowHeight(fontSize: preferences.tileLabelFontSize)),
+                "maxSidewaysLabelWidth": Double(TileLabelMetrics.maxSidewaysLabelWidth),
+                "folderChromeFraction": Double(TileLabelMetrics.folderChromeMarginFraction),
+                "mosaicScale": 0.36,
+                "cardHeightScale": 0.8,
+                "badgeScale": 0.8,
+                "indicatorThickness": 4,
+                "indicatorLength": 12,
+                "indicatorMinInset": 1,
+                "indicatorMinInward": 2,
+            ],
             "tiles": snapshotTiles,
         ]
         let snapshotJSON: String = {
