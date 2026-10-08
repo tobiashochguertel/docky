@@ -150,7 +150,11 @@ def build(
         "-project", str(PROJECT), "-scheme", SCHEME, "-configuration", config,
         "-destination", "platform=macOS",
         "-derivedDataPath", str(BUILD_DIR),
-        "CODE_SIGN_IDENTITY=-", "CODE_SIGNING_REQUIRED=NO",
+        # Xcode signing is irrelevant here: sign_app() below re-signs the
+        # bundle with the stable identity so TCC grants survive rebuilds.
+        # Without CODE_SIGNING_ALLOWED=NO the watchdog target still demands
+        # a "Mac Development" cert from upstream's team ID and fails the build.
+        "CODE_SIGN_IDENTITY=-", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGNING_ALLOWED=NO",
     ])
     app_path = built_app(config)
     if not app_path.exists():

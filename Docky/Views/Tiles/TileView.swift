@@ -1049,7 +1049,7 @@ struct TileView: View {
     }
 
     private var tileChromeInset: CGFloat {
-        floor(effectiveTileSize * 3 / 32)
+        TileLayoutMetrics.chromeInset(tileSize: effectiveTileSize)
     }
 
     private var contentInsets: CGSize {

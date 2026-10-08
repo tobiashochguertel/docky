@@ -11,10 +11,15 @@ stays put between releases.
 
 - Layout snapshot now exports a `metrics` block with the sizing
   constants the inspector documents (icon↔label gap, label side inset,
-  label row height, sideways label cap, folder chrome margin, mosaic /
-  card / badge scales, indicator thickness, length and inset). The values
-  are read from `TileLabelMetrics` and the tile views themselves, so the
-  inspector's "fixed vs configurable" table cannot drift from the code.
+  label row height, sideways label cap, folder chrome margin, chrome
+  inset, mosaic / card / badge scales, indicator thickness, length and
+  inset). The values are read from `TileLabelMetrics`,
+  `TileLayoutMetrics` and the tile views themselves, so the inspector's
+  "fixed vs configurable" table cannot drift from the code.
+- New `TileLayoutMetrics.chromeInset` names the widget-chrome inset
+  (`floor(tileSize * 3/32)`) that `TileView` used to inline, and exports
+  it in the snapshot. App tiles keep a zero inset; widget-chrome tiles
+  (widget, smart stack, app tile showing a widget) reserve it.
 
 - Optional iOS-style name labels for dock tiles and app folders. Two
   independent toggles (both default off) plus a shared label position

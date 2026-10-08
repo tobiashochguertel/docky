@@ -261,6 +261,22 @@ struct TileLabeledContent<Content: View>: View {
     }
 }
 
+/// Tile sizing constants that are compiled in rather than configurable.
+/// The inspector documents these, so they live here with the label
+/// metrics they are used alongside.
+enum TileLayoutMetrics {
+    /// Optical inset of the *chrome* tiles (folder, trash, app folder,
+    /// widget, smart stack) inside the tile frame, as a fraction of the
+    /// tile's size. App tiles deliberately get 0 here: their icons carry
+    /// their own transparent margin, so an extra inset would double it.
+    static let chromeInsetFraction: CGFloat = 3.0 / 32.0
+
+    /// Resolved chrome inset for a given tile size.
+    static func chromeInset(tileSize: CGFloat) -> CGFloat {
+        floor(tileSize * chromeInsetFraction)
+    }
+}
+
 enum TileLabelMetrics {
     /// Gap between the icon and its label.
     static let spacing: CGFloat = 2
