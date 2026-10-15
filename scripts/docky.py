@@ -63,6 +63,26 @@ def md5_of(path: Path) -> str:
     return digest.hexdigest()
 
 
+def strip_provenance_xattrs(app_path: Path) -> None:
+    """Drop the extended attributes macOS adds when copying into /Applications.
+
+    `codesign --verify --strict` refuses a bundle carrying `com.apple.provenance`
+    or `com.apple.ResourceFork` with "resource fork, Finder information, or
+    similar detritus not allowed" -- even though the signature itself is valid
+    (the codesign output still reports every component as --validated). Copying
+    with `ditto` adds those attributes, so they are removed before the
+    post-install verification rather than weakening the verify.
+
+    None of these attributes are part of a code signature, so removing them
+    cannot invalidate one.
+    """
+    for name in ("com.apple.provenance", "com.apple.ResourceFork", "com.apple.FinderInfo"):
+        subprocess.run(
+            ["xattr", "-r", "-d", name, str(app_path)],
+            text=True, capture_output=True, check=False,
+        )
+
+
 def team_identifier(app_path: Path) -> str | None:
     try:
         proc = subprocess.run(
@@ -150,11 +170,7 @@ def build(
         "-project", str(PROJECT), "-scheme", SCHEME, "-configuration", config,
         "-destination", "platform=macOS",
         "-derivedDataPath", str(BUILD_DIR),
-        # Xcode signing is irrelevant here: sign_app() below re-signs the
-        # bundle with the stable identity so TCC grants survive rebuilds.
-        # Without CODE_SIGNING_ALLOWED=NO the watchdog target still demands
-        # a "Mac Development" cert from upstream's team ID and fails the build.
-        "CODE_SIGN_IDENTITY=-", "CODE_SIGNING_REQUIRED=NO", "CODE_SIGNING_ALLOWED=NO",
+        "CODE_SIGN_IDENTITY=-", "CODE_SIGNING_REQUIRED=NO",
     ])
     app_path = built_app(config)
     if not app_path.exists():
@@ -232,8 +248,12 @@ def deploy(
     installed_binary = INSTALLED_APP / "Contents/MacOS/Docky"
     if md5_of(installed_binary) != md5_of(app_path / "Contents/MacOS/Docky"):
         raise typer.Exit("Installed binary differs from the built one; deploy failed.")
+    # Copying into /Applications attaches com.apple.provenance xattrs, which a
+    # strict verify rejects outright. Strip them first so the check runs against
+    # the real signature instead of against detritus the OS added on the way.
+    strip_provenance_xattrs(INSTALLED_APP)
     run(["codesign", "--verify", "--deep", "--strict", str(INSTALLED_APP)])
-    logger.info("Verified signature of {}", INSTALLED_APP)
+    logger.info("Verified signature of {} as team {}", INSTALLED_APP, new_team)
 
     if previous_team != new_team:
         logger.warning(
