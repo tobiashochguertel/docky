@@ -1228,13 +1228,15 @@ struct TileView: View {
                 renderedSpan: renderedWidgetSpan(for: widget.effectiveSpan),
                 isWithinStack: false,
                 isExpanded: false,
-                isExpandedPreviewOpen: widgetExpansion.activeSourceTileID == tile.id
+                isExpandedPreviewOpen: widgetExpansion.activeSourceTileID == tile.id,
+                debugGeometryID: tile.id
             )
         case .smartStack(let stack):
             SmartStackTileView(
                 tile: stack,
                 cornerRadius: nonAppTileCornerRadius,
-                renderedSpan: renderedWidgetSpan(for: stack.span)
+                renderedSpan: renderedWidgetSpan(for: stack.span),
+                debugGeometryID: tile.id
             )
         case .folder(let folder):
             FolderTileView(

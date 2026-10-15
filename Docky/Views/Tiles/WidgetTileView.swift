@@ -12,12 +12,36 @@ struct WidgetTileView: View {
     let isWithinStack: Bool
     var isExpanded: Bool = false
     var isExpandedPreviewOpen: Bool = false
+    /// Records the resolved artwork frame for the inspector's structure
+    /// figures. Passthrough when nil (popover previews, smart-stack cards).
+    var debugGeometryID: String? = nil
 
     var body: some View {
         #if DEBUG
         let _ = Self._printChanges()
         #endif
 
+        measured(widgetBody)
+    }
+
+    /// Wraps the artwork with the same global-frame measurement every other
+    /// painted tile view uses, so a widget tile reports icon/label/paint
+    /// frames like an app or folder tile instead of none at all.
+    @ViewBuilder
+    private func measured<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, frame: frame)
+            }
+        } else {
+            view
+        }
+    }
+
+    @ViewBuilder
+    private var widgetBody: some View {
         switch tile.kind {
         case .calendar, .calendarDate:
             CalendarWidgetTileView(

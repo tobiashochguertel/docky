@@ -10,6 +10,8 @@ struct SmartStackTileView: View {
     let tile: SmartStackTile
     let cornerRadius: CGFloat
     let renderedSpan: TileSpan
+    /// Records the resolved stack frame for the inspector's structure figures.
+    var debugGeometryID: String? = nil
 
     @State private var selection = 0
     @State private var lastScrollAt: TimeInterval = 0
@@ -26,7 +28,8 @@ struct SmartStackTileView: View {
         let _ = Self._printChanges()
         #endif
 
-        SmartStackScrollHostingView(content: contentView) { deltaX, deltaY in
+        measured(
+            SmartStackScrollHostingView(content: contentView) { deltaX, deltaY in
             handleScroll(deltaX: deltaX, deltaY: deltaY)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -49,6 +52,22 @@ struct SmartStackTileView: View {
             previousWidgetIdentifiers = tile.widgets.map(\.identifier)
         }
         .onDisappear(perform: hidePagingIndicator)
+        )
+    }
+
+    /// Same global-frame measurement the other painted tile views use, so a
+    /// smart stack reports a paint frame instead of none at all.
+    @ViewBuilder
+    private func measured<V: View>(_ view: V) -> some View {
+        if let debugGeometryID {
+            view.onGeometryChange(for: CGRect.self) { proxy in
+                proxy.frame(in: .global)
+            } action: { frame in
+                TileGeometryService.shared.recordPainted(id: debugGeometryID, frame: frame)
+            }
+        } else {
+            view
+        }
     }
 
     @ViewBuilder

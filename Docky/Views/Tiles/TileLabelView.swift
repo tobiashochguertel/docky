@@ -200,15 +200,19 @@ struct TileLabeledContent<Content: View>: View {
             // its labeled neighbors instead of staircasing.
             VStack(spacing: TileLabelMetrics.spacing) {
                 if placement == .above {
-                    Color.clear.frame(height: labelHeight)
+                    measured(Color.clear.frame(height: labelHeight), as: .label)
                 }
-                content
+                measured(content, as: .icon)
                 if placement == .below {
-                    Color.clear.frame(height: labelHeight)
+                    measured(Color.clear.frame(height: labelHeight), as: .label)
                 }
             }
         } else {
-            content
+            // Widgets, spacers and dividers land here. The icon is still a
+            // real layout box, so it is measured even without a label --
+            // otherwise the inspector records nothing at all for them and
+            // a widget tile's measured bands come back null.
+            measured(content, as: .icon)
         }
     }
 
