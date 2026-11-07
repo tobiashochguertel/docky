@@ -40,8 +40,15 @@ struct WidgetTileView: View {
         }
     }
 
-    @ViewBuilder
     private var widgetBody: some View {
+        Group {
+            kindView
+        }
+        .environment(\.widgetTextScale, DockyPreferences.shared.widgetTextScale)
+    }
+
+    @ViewBuilder
+    private var kindView: some View {
         switch tile.kind {
         case .calendar, .calendarDate:
             CalendarWidgetTileView(
